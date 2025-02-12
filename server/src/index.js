@@ -20,6 +20,10 @@ app.use(cookieParser(secret));
 //routes
 app.use("/api/v1", routes);
 
+// app.get("/api/message", (req, res) => {
+//   res.json({ message: "Yameteeee" });
+// });
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

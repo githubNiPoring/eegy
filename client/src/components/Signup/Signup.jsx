@@ -5,13 +5,18 @@ const Signup = () => {
   const [formData, setFormData] = useState({
     firstname: "",
     lastname: "",
+    middlename: "",
+    username: "",
     email: "",
     password: "",
+    birthdate: "",
+    gender: "Male",
   });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  console.log(formData);
 
   const [error, setError] = useState("");
   const [approve, setApprove] = useState("");
@@ -36,6 +41,13 @@ const Signup = () => {
       }
 
       setApprove(response.data.message);
+
+      setFormData({
+        firstname: "",
+        lastname: "",
+        email: "",
+        password: "",
+      });
     } catch (error) {
       console.log(error);
       setError(error.response.data.message);
@@ -64,7 +76,7 @@ const Signup = () => {
                   </div>
                 )}
                 {approve && (
-                  <div className="bg-success border border-green-400 text-white px-4 py-2 rounded">
+                  <div className="bg-success border border-green-400 text-center text-white px-4 py-2 rounded">
                     {approve}
                   </div>
                 )}
@@ -106,6 +118,36 @@ const Signup = () => {
                   </div>
                   <div className="input-group mb-3">
                     <span className="input-group-text" id="basic-addon1">
+                      <i className="bi bi-person-fill"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Middle Initial (optional)"
+                      aria-label="Middlename"
+                      name="middlename"
+                      value={formData.middlename}
+                      onChange={handleChange}
+                      aria-describedby="basic-addon1"
+                    />
+                  </div>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon1">
+                      <i className="bi bi-person-badge"></i>
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Username"
+                      aria-label="Username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      aria-describedby="basic-addon1"
+                    />
+                  </div>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon1">
                       <i className="bi bi-envelope"></i>
                     </span>
                     <input
@@ -134,6 +176,54 @@ const Signup = () => {
                       aria-describedby="basic-addon1"
                     />
                   </div>
+                  <div className="input-group mb-3">
+                    <span className="input-group-text" id="basic-addon1">
+                      <i className="bi bi-calendar-event-fill"></i>
+                    </span>
+                    <input
+                      type="date"
+                      className="form-control"
+                      placeholder="Birthdate"
+                      aria-label="Birthdate"
+                      name="birthdate"
+                      value={formData.birthdate}
+                      onChange={handleChange}
+                      aria-describedby="basic-addon1"
+                    />
+                  </div>
+                  <div className="input-group mb-3">
+                    <label
+                      className="input-group-text"
+                      htmlFor="inputGroupSelect01"
+                    >
+                      Gender
+                    </label>
+                    <select
+                      className="form-select"
+                      id="inputGroupSelect01"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                    >
+                      <option defaultValue={formData.gender} value="Male">
+                        Male
+                      </option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+
+                  {/* <div className="input-group mb-3">
+                    <input
+                      type="hidden"
+                      className="form-control"
+                      placeholder="Gender"
+                      aria-label="Gender"
+                      name="Gender"
+                      value={formData.gender}
+                      onChange={handleChange}
+                      aria-describedby="basic-addon1"
+                    />
+                  </div> */}
                   <button
                     type="submit"
                     className="btn btn-warning w-100 mt-2 d-flex justify-content-center"

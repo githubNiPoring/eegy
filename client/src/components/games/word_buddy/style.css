@@ -1,0 +1,17 @@
+.coin-size {
+  width: 25px;
+  height: 25px;
+}
+
+.question-icon {
+  max-width: 50%;
+  min-width: 150px;
+}
+
+.bg-color {
+  background-color: #839cb0 !important;
+}
+
+.pad-10 {
+  padding: 0 100px !important;
+}

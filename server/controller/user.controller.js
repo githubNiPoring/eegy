@@ -67,6 +67,7 @@ const Login = async (req, res) => {
       user: {
         firstname: user.firstname,
         lastname: user.lastname,
+        username: user.username,
         email: user.email,
       },
     });
@@ -85,17 +86,26 @@ const Signup = async (req, res) => {
     if (error) {
       return res
         .status(400)
-        .json({ message: error.details[0].message, success: false });
+        .json({ message: error.details[0].message, success: false, error });
     }
+
+    const birthdateString = req.body.birthdate;
+    const birthdate = new Date(birthdateString);
 
     //checks if user already existed
     let user = await User.findOne({ email: req.body.email });
     if (user) {
       return res
         .status(400)
-        .json({ message: "User already existed", success: false });
+        .json({ message: "Email already existed", success: false });
     }
 
+    let username = await User.findOne({ username: req.body.username });
+    if (username) {
+      return res
+        .status(400)
+        .json({ message: "Username already existed", success: false });
+    }
     //hash the password
     const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
@@ -112,7 +122,7 @@ const Signup = async (req, res) => {
       token: crypto.randomBytes(32).toString("hex"),
     }).save();
 
-    const url = `http://localhost:5000/api/v1/${user._id}/verify/${verificationToken.token}`;
+    const url = `http://localhost:5173/api/v1/${user._id}/verify/${verificationToken.token}`;
 
     await sendEmail(
       user.email,
@@ -121,7 +131,8 @@ const Signup = async (req, res) => {
     );
 
     res.status(201).send({
-      message: "An Email was sent to your account please verify",
+      message:
+        "Verification email sent! Please check your inbox to verify your account.",
       success: true,
     });
   } catch (error) {
@@ -145,14 +156,16 @@ const Verify = async (req, res) => {
       token: req.params.token,
     });
     if (!verificationToken) {
-      return res.status(400).json({ message: "test" });
+      return res.status(400).json({ message: "Invalid link" });
     }
 
     await User.updateOne({ _id: user._id }, { $set: { verified: true } });
 
-    await TokenModel.deleteOne({ _id: verificationToken._id });
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    if (verificationToken.createdAt < fifteenMinutesAgo) {
+      await TokenModel.deleteOne({ _id: verificationToken._id });
+    }
 
-    // Step 5: Send success response
     res.status(200).send({ message: "Email verified successfully" });
   } catch (error) {
     res.status(500).json({
@@ -178,6 +191,7 @@ const Home = async (req, res) => {
       user: {
         firstname: user.firstname,
         lastname: user.lastname,
+        username: user.username,
         email: user.email,
       },
     });

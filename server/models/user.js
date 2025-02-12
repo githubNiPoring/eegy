@@ -12,12 +12,29 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  middlename: {
+    type: String,
+    required: false,
+  },
+  username: {
+    type: String,
+    required: true,
+  },
   email: {
     type: String,
     required: true,
   },
   password: {
     type: String,
+    required: true,
+  },
+  birthdate: {
+    type: Date,
+    required: true,
+  },
+  gender: {
+    type: String,
+    enum: ["Male", "Female"],
     required: true,
   },
   verified: {
@@ -39,8 +56,12 @@ const validate = (data) => {
   const schema = Joi.object({
     firstname: Joi.string().required().label("First Name"),
     lastname: Joi.string().required().label("Last Name"),
+    middlename: Joi.string().allow("").label("Middle Name"),
+    username: Joi.string().required().label("Username"),
     email: Joi.string().email().required().label("Email"),
     password: passwordComplexity().required().label("Password"),
+    birthdate: Joi.date().required().label("Birthdate"),
+    gender: Joi.string().required().label("Gender"),
   });
   return schema.validate(data);
 };

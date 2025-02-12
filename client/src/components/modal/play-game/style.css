@@ -1,0 +1,20 @@
+.modal-container {
+  position: absolute;
+  bottom: -50px;
+}
+
+.card-img-top {
+  max-width: 30%;
+  /* object-fit: cover; */
+}
+
+.game {
+  background-color: #ffeb3b !important;
+  cursor: pointer;
+}
+
+@media (max-width: 992px) {
+  .card-img-top {
+    max-width: 15%;
+  }
+}

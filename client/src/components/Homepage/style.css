@@ -1,0 +1,114 @@
+body {
+  font-family: "Comic Sans MS", cursive, sans-serif; /* Playful font */
+  overflow: hidden;
+}
+
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: rgb(192, 212, 255);
+  flex-grow: 1;
+  z-index: -10;
+}
+
+.enhanced-nav {
+  background-color: #ffcc00; /* Bright yellow background */
+  padding: 10px 0; /* Padding */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow effect */
+  border-bottom: 2px solid #ff9900; /* Bottom border */
+}
+
+.enhanced-nav .player-logo,
+.enhanced-nav .coin-logo {
+  width: 50px; /* Adjust the size of the logos */
+  height: 50px; /* Adjust the size of the logos */
+  border-radius: 50%; /* Make the logos circular */
+}
+
+.enhanced-nav .info-text,
+.enhanced-nav .level-text {
+  color: #000; /* Black text color */
+  font-size: 1.2rem; /* Larger font size */
+  font-weight: bold; /* Bold text */
+}
+
+.enhanced-nav .info-text {
+  margin-left: 10px; /* Space between logo and text */
+}
+
+.enhanced-nav .level-text {
+  text-align: right; /* Align text to the right */
+}
+
+.play-btn {
+  background-color: #ffcc00; /* Bright yellow color */
+  color: #000; /* Black text */
+  border: 2px solid #ff9900; /* Orange border */
+  border-radius: 10px; /* Rounded corners */
+  padding: 10px 20px; /* Padding */
+  font-size: 1.5rem; /* Larger font size */
+  font-weight: bold; /* Bold text */
+  text-transform: uppercase; /* Uppercase text */
+  box-shadow: 0 5px #cc7a00; /* Shadow effect */
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: all 0.2s ease; /* Smooth transition */
+}
+
+.play-btn:active {
+  background-color: #ff9900; /* Darker yellow on click */
+  box-shadow: 0 3px #cc7a00; /* Reduced shadow on click */
+  transform: translateY(2px); /* Slightly move down on click */
+}
+
+.clickable {
+  cursor: pointer; /* Pointer cursor on hover */
+  transition: background-color 0.2s ease; /* Smooth transition */
+  background-color: #ffeb3b; /* Light yellow background */
+  border-radius: 10px; /* Rounded corners */
+  padding: 10px; /* Padding */
+}
+
+.clickable:hover {
+  background-color: #ffe680; /* Light yellow background on hover */
+}
+
+.main {
+  position: absolute; /* Make .container positioned relative to the body */
+  bottom: 100px; /* Position it at the bottom */
+  width: 100%;
+}
+.character {
+  max-width: 25%;
+  margin-right: 100px;
+  min-width: 175px;
+}
+.chest .chest-logo {
+  max-width: 20%;
+  min-width: 70px;
+}
+
+.player .player-logo {
+  border-radius: 50%;
+  border: 2px solid black;
+}
+
+.others {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.others .size {
+  max-width: 5%;
+  min-width: 40px;
+  border-radius: 50%;
+}
+
+@media (max-width: 992px) {
+  .character {
+    margin-right: 0;
+  }
+}
