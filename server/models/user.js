@@ -1,56 +1,69 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
 const passwordComplexity = require("joi-password-complexity");
+const { sequelize } = require("../src/config");
 
-const userSchema = new mongoose.Schema({
-  firstname: {
-    type: String,
-    required: true,
+const User = sequelize.define(
+  "User",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    firstname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lastname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    middlename: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    birthdate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    gender: {
+      type: DataTypes.ENUM("Male", "Female"),
+      allowNull: false,
+    },
+    verified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
-  lastname: {
-    type: String,
-    required: true,
-  },
-  middlename: {
-    type: String,
-    required: false,
-  },
-  username: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  birthdate: {
-    type: Date,
-    required: true,
-  },
-  gender: {
-    type: String,
-    enum: ["Male", "Female"],
-    required: true,
-  },
-  verified: {
-    type: Boolean,
-    required: false,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
-userSchema.methods.generateJWT = () => {
-  const token = jwt.sign({ _id: this._id }, process.env.JWT_SECRET, {
+User.prototype.generateJWT = function () {
+  return jwt.sign({ id: this.id }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
-  return token;
 };
-
-const User = mongoose.model("User", userSchema);
 
 const validate = (data) => {
   const schema = Joi.object({

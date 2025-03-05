@@ -15,26 +15,35 @@ const EmailVerification = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      console.log("Extracted Parameters:", { userId, token });
       try {
-        // Construct the verification URL dynamically
+        console.log("Attempting verification for:", { userId, token });
+
         const response = await axios.get(
-          `http://localhost:5000/api/v1/${userId}/verify/${token}`
+          `http://localhost:5000/api/v1/${userId}/verify/${token}`,
+          { withCredentials: true }
         );
 
-        console.log(response);
-        // Successful verification
+        console.log("Verification response:", response.data);
+
+        // Always set success to true if we get a 200 response
         setVerificationStatus({
           loading: false,
           success: true,
-          message: response.data.message || "Email verified successfully",
+          message: "Email verified successfully! You can now login.",
         });
+
+        // Automatically redirect to login after 3 seconds
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
       } catch (error) {
-        // Handle verification errors
+        console.error("Verification error:", error.response || error);
         setVerificationStatus({
           loading: false,
           success: false,
-          message: error.response?.data?.message || "Verification failed",
+          message:
+            error.response?.data?.message ||
+            "Verification failed. Please try again.",
         });
       }
     };
@@ -72,21 +81,16 @@ const EmailVerification = () => {
                   : "Verification Failed"}
               </h2>
               <p>{verificationStatus.message}</p>
-              {verificationStatus.success && (
-                // <p>Click the button below to login</p>
-                <button
-                  onClick={() => navigate("/login")}
-                  className="btn btn-warning mt-3"
-                >
-                  Click here to Login
-                </button>
-              )}
-              {!verificationStatus.success && (
+              {verificationStatus.success ? (
+                <p className="text-muted">
+                  Redirecting to login page in 3 seconds...
+                </p>
+              ) : (
                 <button
                   onClick={() => navigate("/signup")}
                   className="btn btn-warning mt-3"
                 >
-                  Try Again
+                  Back to Signup
                 </button>
               )}
             </div>

@@ -1,22 +1,48 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../src/config");
+const { User } = require("./user");
 
-const tokenSchema = new Schema({
-  userId: {
-    type: Schema.Types.ObjectId,
-    required: true,
-    ref: "users",
-    unique: true,
+const Token = sequelize.define(
+  "Token",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: User,
+        key: "id",
+      },
+      unique: true,
+    },
+    token: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      allowNull: false,
+    },
   },
-  token: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-    expires: 3600,
-  },
-});
-const TokenModel = mongoose.model("token", tokenSchema);
-module.exports = TokenModel;
+  {
+    timestamps: true,
+    indexes: [
+      {
+        fields: ["createdAt"],
+        using: "BTREE",
+        name: "token_expiry_idx",
+      },
+    ],
+  }
+);
+
+// Set up the association
+Token.belongsTo(User, { foreignKey: "userId" });
+User.hasOne(Token, { foreignKey: "userId" });
+
+module.exports = Token;

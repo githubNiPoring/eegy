@@ -1,4 +1,6 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 // import axios from "axios";
 
 import Notfound from "./components/404page/404";
@@ -19,22 +21,23 @@ import "./App.css";
 
 function App() {
   return (
-    <>
+    <ThemeProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />}></Route>
-        <Route path="/login" element={<Login />}></Route>
-        <Route path="/signup" element={<Signup />}></Route>
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/home" element={<Navigate to="/homepage" />} />
+        <Route path="/homepage" element={<Homepage />} />
         <Route
-          path="/api/v1/:userId/verify/:token"
+          path="/verify/:userId/:token"
           element={<EmailVerification />}
         ></Route>
-        <Route path="/home" element={<Homepage />}></Route>
         <Route path="/word-buddy" element={<WordBuddy />}></Route>
         <Route path="/alphabet" element={<Alphabet />}></Route>
         <Route path="/kid-wordle" element={<KidWordle />}></Route>
         <Route path="*" element={<Notfound />}></Route>
       </Routes>
-    </>
+    </ThemeProvider>
   );
 }
 

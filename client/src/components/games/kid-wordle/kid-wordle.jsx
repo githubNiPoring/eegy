@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../../../context/ThemeContext";
 import GameOver from "../../modal/game-over/gameover";
+import "./style.css";
 
 const WORD = "POWER"; // Change this word to set the correct answer
 const MAX_GUESSES = 5;
@@ -12,6 +13,7 @@ const KEYBOARD_ROWS = [
 ];
 
 const KidWordle = () => {
+  const { theme } = useTheme();
   const [guesses, setGuesses] = useState([]);
   const [currentGuess, setCurrentGuess] = useState("");
   const [gameOver, setGameOver] = useState(false);
@@ -114,66 +116,119 @@ const KidWordle = () => {
     return statusArray;
   };
 
-  return (
-    <div className="container text-center mt-4">
-      <h1>KidWordle</h1>
-      {[...Array(MAX_GUESSES)].map((_, i) => (
-        <div key={i} className="d-flex justify-content-center mb-2">
-          {(
-            guesses[i] ||
-            (i === guesses.length
-              ? currentGuess.padEnd(WORD.length, " ")
-              : " ".repeat(WORD.length))
-          )
-            .split("")
-            .map((letter, j) => (
-              <span
-                key={j}
-                className={`p-3 border border-3 rounded mx-1 text-uppercase fw-bold d-inline-flex align-items-center justify-content-center ${
-                  guesses[i]
-                    ? getLetterStatus(WORD, guesses[i])[j]
-                    : "text-muted bg-light"
-                }`}
-                style={{ width: "50px", height: "50px", fontSize: "24px" }}
-              >
-                {letter}
-              </span>
-            ))}
-        </div>
-      ))}
-      {invalidWord && <p className="text-danger">Invalid word! Try again.</p>}
-      {/* {gameOver && (
-        <p className="mt-3">
-          Game Over! The word was <strong>{WORD}</strong>
-        </p>
-      )} */}
-      {gameOver && <GameOver onClose={handleCloseGameOver} />}
-      {/* {showGameOver && <GameOver onClose={handleCloseGameOver} />} */}
+  const getLetterClassName = (letter, index, guess) => {
+    if (!guess) return "empty";
+    const status = getLetterStatus(WORD, guess)[index];
+    if (status === "bg-success text-white") return "correct";
+    if (status === "bg-warning text-white") return "wrong-pos";
+    return "wrong";
+  };
 
-      <div className="mt-3">
-        {KEYBOARD_ROWS.map((row, i) => (
-          <div key={i} className="d-flex justify-content-center mb-2">
-            {row.map((key) => (
-              <button
-                key={key}
-                className={`btn m-1 text-uppercase ${
-                  usedLetters[key] || "btn-light"
-                }`}
-                style={{
-                  width: key.length > 1 ? "80px" : "50px",
-                  height: "50px",
-                  backgroundColor: "lightgray",
-                  border: "1px solid darkgray",
-                }}
-                onClick={() => handleInput(key)}
-              >
-                {key === "Backspace" ? "⌫" : key}
-              </button>
-            ))}
-          </div>
-        ))}
+  const getKeyboardKeyClassName = (key) => {
+    if (!usedLetters[key]) return "";
+    if (usedLetters[key] === "bg-success text-white") return "correct";
+    if (usedLetters[key] === "bg-warning text-white") return "wrong-pos";
+    return "wrong";
+  };
+
+  return (
+    <motion.div
+      className={`kidwordle-wrapper ${theme}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="game-container">
+        <motion.h1 className="game-title">
+          {"KidWordle".split("").map((letter, i) => (
+            <motion.span
+              key={i}
+              initial={{ y: -20 }}
+              animate={{ y: 0 }}
+              transition={{
+                delay: i * 0.1,
+                type: "spring",
+                stiffness: 300,
+                damping: 10,
+              }}
+            >
+              {letter}
+            </motion.span>
+          ))}
+          <span>🎯</span>
+        </motion.h1>
+
+        <motion.div className="word-grid">
+          {[...Array(MAX_GUESSES)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="word-row"
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              {(
+                guesses[i] ||
+                (i === guesses.length
+                  ? currentGuess.padEnd(WORD.length, " ")
+                  : " ".repeat(WORD.length))
+              )
+                .split("")
+                .map((letter, j) => (
+                  <motion.div
+                    key={j}
+                    className={`letter-box ${getLetterClassName(
+                      letter,
+                      j,
+                      guesses[i]
+                    )}`}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: j * 0.1 }}
+                  >
+                    {letter !== " " ? letter : ""}
+                  </motion.div>
+                ))}
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <AnimatePresence>
+          {invalidWord && (
+            <motion.p
+              className="invalid-word"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+            >
+              Oops! That's not a word! Try again! 🤔
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        <motion.div className="keyboard">
+          {KEYBOARD_ROWS.map((row, i) => (
+            <div key={i} className="keyboard-row">
+              {row.map((key) => (
+                <motion.button
+                  key={key}
+                  className={`keyboard-key ${
+                    key.length > 1 ? "special" : ""
+                  } ${getKeyboardKeyClassName(key)}`}
+                  onClick={() => handleInput(key)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {key === "Backspace" ? "⌫" : key === "Enter" ? "✓" : key}
+                </motion.button>
+              ))}
+            </div>
+          ))}
+        </motion.div>
       </div>
-    </div>
+
+      {gameOver && <GameOver onClose={handleCloseGameOver} />}
+    </motion.div>
   );
 };
 

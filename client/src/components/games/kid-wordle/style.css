@@ -1,0 +1,315 @@
+.kidwordle-wrapper {
+  min-height: 100vh;
+  max-height: 100vh;
+  padding: 1rem;
+  background: var(--bg-primary);
+  transition: all 0.3s ease;
+  font-family: "Comic Sans MS", cursive;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kidwordle-wrapper.dark {
+  --bg-primary: #2f3136;
+  --card-bg: #36393f;
+  --text-primary: #ffffff;
+  --text-secondary: #dcddde;
+  --letter-box-empty: #202225;
+  --letter-box-correct: #43b581;
+  --letter-box-wrong-pos: #faa61a;
+  --letter-box-wrong: #36393f;
+  --keyboard-key-bg: #4f545c;
+  --keyboard-key-text: #ffffff;
+  --keyboard-key-hover: #7289da;
+}
+
+.kidwordle-wrapper.light {
+  --bg-primary: #fff9e6;
+  --card-bg: #ffffff;
+  --text-primary: #663300;
+  --text-secondary: #996633;
+  --letter-box-empty: #ffedd6;
+  --letter-box-correct: #4caf50;
+  --letter-box-wrong-pos: #ff9800;
+  --letter-box-wrong: #e0e0e0;
+  --keyboard-key-bg: #ffe0b2;
+  --keyboard-key-text: #663300;
+  --keyboard-key-hover: #ffb74d;
+}
+
+.game-container {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  background: var(--card-bg);
+  border-radius: 25px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 2rem);
+  max-height: 800px;
+}
+
+.game-title {
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.game-title span {
+  display: inline-block;
+  animation: bounce 1s ease infinite;
+}
+
+.game-title span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.game-title span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.game-title span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.game-title span:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.game-title span:nth-child(6) {
+  animation-delay: 0.5s;
+}
+.game-title span:nth-child(7) {
+  animation-delay: 0.6s;
+}
+.game-title span:nth-child(8) {
+  animation-delay: 0.7s;
+}
+
+.word-grid {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+  align-content: center;
+}
+
+.word-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.letter-box {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--letter-box-empty);
+  border-radius: 10px;
+  font-size: 1.75rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.letter-box.empty {
+  background: var(--letter-box-empty);
+}
+
+.letter-box.correct {
+  background: var(--letter-box-correct);
+  border-color: var(--letter-box-correct);
+  color: white;
+  animation: pop 0.3s ease;
+}
+
+.letter-box.wrong-pos {
+  background: var(--letter-box-wrong-pos);
+  border-color: var(--letter-box-wrong-pos);
+  color: white;
+  animation: shake 0.3s ease;
+}
+
+.letter-box.wrong {
+  background: var(--letter-box-wrong);
+  border-color: var(--letter-box-wrong);
+  color: var(--text-secondary);
+}
+
+.keyboard {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  flex-shrink: 0;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.keyboard-key {
+  min-width: 40px;
+  height: 45px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: var(--keyboard-key-bg);
+  color: var(--keyboard-key-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.keyboard-key:hover {
+  background: var(--keyboard-key-hover);
+  transform: translateY(-2px);
+}
+
+.keyboard-key:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
+}
+
+.keyboard-key.special {
+  font-size: 1.3rem;
+  min-width: 60px;
+}
+
+.invalid-word {
+  color: #ff4444;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+  animation: shake 0.3s ease;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 45%;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    padding: 1rem;
+  }
+
+  .letter-box {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+    border-width: 2px;
+  }
+
+  .keyboard-key {
+    min-width: 30px;
+    height: 40px;
+    font-size: 0.9rem;
+    padding: 0 0.5rem;
+  }
+
+  .keyboard-key.special {
+    min-width: 45px;
+    font-size: 1.1rem;
+  }
+
+  .game-title {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .word-grid {
+    gap: 0.4rem;
+  }
+
+  .word-row {
+    gap: 0.4rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .game-container {
+    padding: 0.75rem;
+  }
+
+  .game-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .letter-box {
+    width: 35px;
+    height: 35px;
+    font-size: 1.1rem;
+  }
+
+  .keyboard-key {
+    height: 35px;
+    min-width: 28px;
+    font-size: 0.85rem;
+  }
+
+  .keyboard-key.special {
+    min-width: 40px;
+  }
+
+  .word-grid {
+    gap: 0.3rem;
+  }
+
+  .keyboard {
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+  }
+}

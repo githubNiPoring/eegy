@@ -1,8 +1,9 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const { Op } = require("sequelize");
 
 const { User, validate } = require("../models/user");
-const TokenModel = require("../models/token");
+const Token = require("../models/token");
 const sendEmail = require("../utils/send.mail");
 const { createSecretToken } = require("../utils/secret.token");
 
@@ -16,7 +17,7 @@ const Login = async (req, res) => {
         .json({ message: "Invalid Credentials", success: false });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(400).json({
         message: "Either email or password is incorrect",
@@ -32,15 +33,15 @@ const Login = async (req, res) => {
       });
     }
 
-    if (user.verified === false) {
-      let token = await TokenModel.findOne({ userId: user._id });
+    if (!user.verified) {
+      let token = await Token.findOne({ where: { userId: user.id } });
       if (!token) {
-        token = await new TokenModel({
-          useId: user._id,
+        token = await Token.create({
+          userId: user.id,
           token: crypto.randomBytes(32).toString("hex"),
-        }).save();
+        });
 
-        const url = `http://localhost:5000/api/v1/${user._id}/verify/${token.token}`;
+        const url = `http://localhost:5000/api/v1/${user.id}/verify/${token.token}`;
         await sendEmail(
           user.email,
           "Verify Email",
@@ -53,27 +54,22 @@ const Login = async (req, res) => {
       });
     }
 
-    const token = createSecretToken(user._id);
+    const token = createSecretToken(user.id);
     res.cookie("token", token, {
       maxAge: 1000 * 60 * 60 * 24 * 7,
       sameSite: "strict",
       httpOnly: true,
       signed: true,
     });
+
     res.status(200).json({
-      message: "Login Successfully",
+      message: "Logged in successfully",
       success: true,
-      token: token,
-      user: {
-        firstname: user.firstname,
-        lastname: user.lastname,
-        username: user.username,
-        email: user.email,
-      },
+      token,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error creating user",
+      message: "Error logging in",
       details: error.message,
       success: false,
     });
@@ -82,8 +78,14 @@ const Login = async (req, res) => {
 
 const Signup = async (req, res) => {
   try {
+    console.log("Received signup request with data:", {
+      ...req.body,
+      password: "[REDACTED]",
+    });
+
     const { error } = validate(req.body);
     if (error) {
+      console.log("Validation error:", error.details[0].message);
       return res
         .status(400)
         .json({ message: error.details[0].message, success: false, error });
@@ -92,42 +94,53 @@ const Signup = async (req, res) => {
     const birthdateString = req.body.birthdate;
     const birthdate = new Date(birthdateString);
 
-    //checks if user already existed
-    let user = await User.findOne({ email: req.body.email });
-    if (user) {
+    // Check if user already exists
+    let existingUser = await User.findOne({
+      where: {
+        [Op.or]: [{ email: req.body.email }, { username: req.body.username }],
+      },
+    });
+
+    if (existingUser) {
+      const field =
+        existingUser.email === req.body.email ? "Email" : "Username";
+      console.log(`${field} already exists for:`, existingUser.email);
       return res
         .status(400)
-        .json({ message: "Email already existed", success: false });
+        .json({ message: `${field} already exists`, success: false });
     }
 
-    let username = await User.findOne({ username: req.body.username });
-    if (username) {
-      return res
-        .status(400)
-        .json({ message: "Username already existed", success: false });
-    }
-    //hash the password
+    // Hash the password
     const encryptedPassword = await bcrypt.hash(req.body.password, 10);
 
-    //create user
-    user = await new User({
+    // Create user
+    const user = await User.create({
       ...req.body,
+      birthdate,
       password: encryptedPassword,
       verified: false,
-    }).save();
+    });
 
-    //create verification token
-    const verificationToken = await new TokenModel({
-      userId: user._id,
+    console.log("User created successfully:", {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+    });
+
+    // Create verification token
+    const verificationToken = await Token.create({
+      userId: user.id,
       token: crypto.randomBytes(32).toString("hex"),
-    }).save();
+    });
 
-    const url = `http://localhost:5173/api/v1/${user._id}/verify/${verificationToken.token}`;
+    // Generate verification URL (pointing to frontend)
+    const verificationUrl = `http://localhost:5173/verify/${user.id}/${verificationToken.token}`;
 
+    // Send email with verification link
     await sendEmail(
       user.email,
       "Verify Email",
-      `Hello ${user.firstname}, Please verify your email by clicking on the link below: \n\n ${url}`
+      `Hello ${user.firstname}, Please verify your email by clicking on the link below: \n\n ${verificationUrl}`
     );
 
     res.status(201).send({
@@ -136,6 +149,21 @@ const Signup = async (req, res) => {
       success: true,
     });
   } catch (error) {
+    console.error("Error in signup:", error);
+    if (error.name === "SequelizeValidationError") {
+      return res.status(400).json({
+        message: "Validation error",
+        details: error.errors.map((e) => e.message),
+        success: false,
+      });
+    }
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(400).json({
+        message: "Email or username already exists",
+        details: error.errors.map((e) => e.message),
+        success: false,
+      });
+    }
     res.status(500).json({
       message: "Error creating user",
       details: error.message,
@@ -146,30 +174,63 @@ const Signup = async (req, res) => {
 
 const Verify = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.params.id });
+    console.log("Verification attempt for user:", req.params.id);
+
+    const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(400).json({ message: "Invalid Link" });
+      console.log("User not found for verification");
+      return res.status(404).json({
+        message: "Invalid verification link",
+        success: false,
+      });
     }
 
-    const verificationToken = await TokenModel.findOne({
-      userId: user._id,
-      token: req.params.token,
+    // Check if user is already verified
+    if (user.verified) {
+      console.log("User already verified:", user.email);
+      return res.status(200).json({
+        message: "Email already verified",
+        success: true,
+      });
+    }
+
+    const token = await Token.findOne({
+      where: {
+        userId: user.id,
+        token: req.params.token,
+      },
     });
-    if (!verificationToken) {
-      return res.status(400).json({ message: "Invalid link" });
+
+    if (!token) {
+      console.log("Token not found for verification");
+      return res.status(400).json({
+        message: "Invalid or expired verification link",
+        success: false,
+      });
     }
 
-    await User.updateOne({ _id: user._id }, { $set: { verified: true } });
+    // Update user verification status
+    await User.update(
+      { verified: true },
+      {
+        where: { id: user.id },
+      }
+    );
 
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-    if (verificationToken.createdAt < fifteenMinutesAgo) {
-      await TokenModel.deleteOne({ _id: verificationToken._id });
-    }
+    // Delete the verification token
+    await token.destroy();
 
-    res.status(200).send({ message: "Email verified successfully" });
+    console.log("User verified successfully:", user.email);
+
+    // Send success response
+    return res.status(200).json({
+      message: "Email verified successfully",
+      success: true,
+    });
   } catch (error) {
-    res.status(500).json({
-      message: "Error verifying user",
+    console.error("Error in verification:", error);
+    return res.status(500).json({
+      message: "Error verifying email",
       details: error.message,
       success: false,
     });
@@ -178,30 +239,21 @@ const Verify = async (req, res) => {
 
 const Home = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res
-        .status(400)
-        .json({ message: "user Not Found", success: false });
-    }
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ["password"] },
+    });
 
     res.status(200).json({
-      message: "homepage",
-      user: {
-        firstname: user.firstname,
-        lastname: user.lastname,
-        username: user.username,
-        email: user.email,
-      },
+      user,
+      success: true,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error verifying user",
+      message: "Error fetching user data",
       details: error.message,
       success: false,
     });
   }
 };
 
-module.exports = { Signup, Verify, Login, Home };
+module.exports = { Signup, Login, Verify, Home };

@@ -1,0 +1,247 @@
+.game-wrapper {
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg-primary);
+  transition: all 0.3s ease;
+}
+
+.game-wrapper.dark {
+  --bg-primary: #2f3136;
+  --card-bg: #36393f;
+  --text-primary: #ffffff;
+  --text-secondary: #dcddde;
+  --letter-box-bg: #202225;
+  --letter-box-border: #43b581;
+  --keyboard-key-bg: #7289da;
+  --keyboard-key-hover: #5865f2;
+  --button-bg: #43b581;
+  --button-hover: #3ca374;
+}
+
+.game-wrapper.light {
+  --bg-primary: #fff9e6;
+  --card-bg: #ffffff;
+  --text-primary: #663300;
+  --text-secondary: #996633;
+  --letter-box-bg: #ffdd57;
+  --letter-box-border: #ffd700;
+  --keyboard-key-bg: #ff6f61;
+  --keyboard-key-hover: #ff5349;
+  --button-bg: #ff69b4;
+  --button-hover: #ff1493;
+}
+
+.game-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--card-bg);
+  border-radius: 25px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.game-title {
+  font-family: "Comic Sans MS", cursive;
+  font-size: 2.5rem;
+  color: var(--text-primary);
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.score-display {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  background: var(--letter-box-bg);
+  border-radius: 15px;
+}
+
+.hint-container {
+  background: var(--letter-box-bg);
+  border-radius: 15px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.hint-text {
+  font-family: "Comic Sans MS", cursive;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.word-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.letter-box {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.letter-box.empty {
+  background: var(--letter-box-bg);
+  border: 3px dashed var(--letter-box-border);
+  opacity: 0.8;
+}
+
+.letter-box.empty:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.letter-box.filled {
+  background: var(--letter-box-bg);
+  border: 3px solid var(--letter-box-border);
+  opacity: 1;
+  pointer-events: none; /* Prevent any interaction with filled boxes */
+}
+
+.keyboard-container {
+  background: var(--card-bg);
+  border-radius: 15px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.keyboard-key {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  background: var(--keyboard-key-bg);
+  border-radius: 10px;
+  cursor: grab;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.keyboard-key:hover {
+  background: var(--keyboard-key-hover);
+}
+
+.check-button {
+  display: block;
+  width: 200px;
+  margin: 2rem auto;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  font-family: "Comic Sans MS", cursive;
+  color: white;
+  background: var(--button-bg);
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.check-button:hover {
+  background: var(--button-hover);
+  transform: translateY(-2px);
+}
+
+.message {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-top: 1rem;
+}
+
+.shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .game-container {
+    padding: 1rem;
+  }
+
+  .game-title {
+    font-size: 2rem;
+  }
+
+  .hint-text {
+    font-size: 1.2rem;
+  }
+
+  .letter-box {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+  }
+
+  .keyboard-key {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Animations */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.letter-box.filled {
+  animation: bounce 2s ease-in-out infinite;
+}
