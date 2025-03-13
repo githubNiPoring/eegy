@@ -33,9 +33,22 @@ const Homepage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        // const response = await axios.get("http://localhost:5000/api/v1/eegy", {
+        //   headers: {
+        //     Authorization: `Bearer ${Cookies.get("token")}`, // Adjust for your token storage
+        //   },
+        // });
+        const token = Cookies.get("token");
+        console.log(token);
+
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
         const response = await axios.get("http://localhost:5000/api/v1/eegy", {
           headers: {
-            Authorization: `Bearer ${Cookies.get("token")}`, // Adjust for your token storage
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -47,6 +60,7 @@ const Homepage = () => {
           return <div>Loading...</div>; // Display a loading message while fetching
         }
       } catch (error) {
+        console.error(error);
         console.error("Error fetching user data:", error);
         navigate("/login");
       }
@@ -297,6 +311,7 @@ const Homepage = () => {
           <GameProfile
             onClose={handleCloseProfile}
             initialTab={profileOpenSource}
+            username={user}
           />
         )}
       </AnimatePresence>

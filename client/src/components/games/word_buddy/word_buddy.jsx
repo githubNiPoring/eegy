@@ -1,12 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../../../context/ThemeContext";
+import { playSoundEffect } from "../../../hooks/useAudio";
 import GameOver from "../../modal/game-over/gameover";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 
 import apple from "../../../assets/game-icons/apple.png";
 import coin from "../../../assets/coin.png";
+import correctSound from "../../../assets/audio/correct.mp3";
+import incorrectSound from "../../../assets/audio/incorrect.mp3";
+import gameOverSound from "../../../assets/audio/game-over.mp3";
 
 import "./style.css";
 
@@ -33,6 +37,7 @@ const Wordbuddy = () => {
 
   const handleAnswer = (selectedWord) => {
     if (selectedWord === currentWord.word) {
+      playSoundEffect(correctSound);
       setShowConfetti(true);
       setScore(score + 10);
       setCoins(coins + 5);
@@ -44,10 +49,12 @@ const Wordbuddy = () => {
         if (currentWordIndex < WORDS.length - 1) {
           setCurrentWordIndex((prev) => prev + 1);
         } else {
+          playSoundEffect(gameOverSound);
           setShowGameOver(true);
         }
       }, 2000);
     } else {
+      playSoundEffect(incorrectSound);
       setMessage("Try again! ❌");
       setCoins(Math.max(0, coins - 2));
 

@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
+import { playSoundEffect } from "../../../hooks/useAudio";
 import GameOver from "../../modal/game-over/gameover";
 import "./style.css";
+
+// Import sound effects
+import correctSound from "../../../assets/audio/correct.mp3";
+import incorrectSound from "../../../assets/audio/incorrect.mp3";
+import gameOverSound from "../../../assets/audio/game-over.mp3";
+import keyPressSound from "../../../assets/audio/key-press.mp3";
 
 const WORD = "POWER"; // Change this word to set the correct answer
 const MAX_GUESSES = 5;
@@ -50,9 +57,11 @@ const KidWordle = () => {
   const handleInput = (key) => {
     if (gameOver) return;
     if (/^[A-Za-z]$/.test(key) && currentGuess.length < WORD.length) {
+      playSoundEffect(keyPressSound);
       setCurrentGuess((prev) => prev + key.toUpperCase());
       setInvalidWord(false);
     } else if (key === "Backspace") {
+      playSoundEffect(keyPressSound);
       setCurrentGuess((prev) => prev.slice(0, -1));
       setInvalidWord(false);
     } else if (key === "Enter" && currentGuess.length === WORD.length) {
@@ -65,6 +74,7 @@ const KidWordle = () => {
 
     const isValid = await checkValidWord(currentGuess.toLowerCase());
     if (!isValid) {
+      playSoundEffect(incorrectSound);
       setInvalidWord(true);
       return;
     }
@@ -82,8 +92,22 @@ const KidWordle = () => {
     });
     setUsedLetters(newUsedLetters);
 
-    if (currentGuess === WORD || newGuesses.length >= MAX_GUESSES) {
+    if (currentGuess === WORD) {
+      playSoundEffect(correctSound);
       setGameOver(true);
+    } else if (newGuesses.length >= MAX_GUESSES) {
+      playSoundEffect(gameOverSound);
+      setGameOver(true);
+    } else {
+      // Play different sounds based on how many correct letters there are
+      const correctCount = statusArray.filter(
+        (status) => status === "bg-success text-white"
+      ).length;
+      if (correctCount > 0) {
+        playSoundEffect(correctSound);
+      } else {
+        playSoundEffect(incorrectSound);
+      }
     }
   };
 

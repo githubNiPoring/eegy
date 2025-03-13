@@ -2,15 +2,29 @@ import { useNavigate } from "react-router-dom";
 import React, { useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { useAudioContext } from "../../context/AudioContext";
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: "http://localhost:5000/api/v1",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 const Login = () => {
   const navigate = useNavigate();
+  const { startMusic } = useAudioContext();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const togglePasswordVisibility = () => {
@@ -20,22 +34,48 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/v1/login",
-        formData
-      );
-      if (!response.data.success) {
-        setError(response.data.message);
-        return;
-      }
+    setIsLoading(true);
 
-      const token = response.data.token;
-      Cookies.set("token", token);
-      navigate("/home");
+    try {
+      const response = await api.post("/login", formData);
+
+      if (response.data && response.data.success) {
+        // Store token in cookie
+        const token = response.data.token;
+        if (token) {
+          Cookies.set("token", token);
+          console.log(token);
+        }
+
+        // Start background music
+        startMusic();
+
+        // Navigate to home
+        navigate("/homepage");
+      } else {
+        setError(response.data?.message || "Login failed. Please try again.");
+      }
     } catch (error) {
-      console.log(error);
-      setError(error.response.data.message);
+      console.error("Login error:", error);
+
+      if (error.code === "ERR_NETWORK") {
+        setError(
+          "Unable to connect to the server. Please check if the server is running."
+        );
+      } else if (error.response) {
+        // Server responded with an error
+        setError(
+          error.response.data?.message ||
+            "Login failed. Please check your credentials."
+        );
+      } else if (error.request) {
+        // Request was made but no response
+        setError("No response from server. Please try again later.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,6 +136,7 @@ const Login = () => {
                         onChange={handleChange}
                         style={{ borderRadius: "0 15px 15px 0" }}
                         required
+                        disabled={isLoading}
                       />
                     </div>
                   </div>
@@ -113,12 +154,14 @@ const Login = () => {
                         value={formData.password}
                         onChange={handleChange}
                         required
+                        disabled={isLoading}
                       />
                       <button
                         className="btn btn-warning bg-warning bg-opacity-10 border-0"
                         type="button"
                         onClick={togglePasswordVisibility}
                         style={{ borderRadius: "0 15px 15px 0" }}
+                        disabled={isLoading}
                       >
                         <i
                           className={`bi ${
@@ -133,9 +176,23 @@ const Login = () => {
                     type="submit"
                     className="btn btn-warning w-100 py-3 mb-3 rounded-pill shadow-sm"
                     style={{ fontSize: "1.1rem" }}
+                    disabled={isLoading}
                   >
-                    <i className="bi bi-box-arrow-in-right me-2"></i>
-                    Let's Play!
+                    {isLoading ? (
+                      <>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-box-arrow-in-right me-2"></i>
+                        Let's Play!
+                      </>
+                    )}
                   </button>
 
                   <div className="text-center">
@@ -144,6 +201,7 @@ const Login = () => {
                       type="button"
                       onClick={() => navigate("/signup")}
                       className="btn btn-outline-warning rounded-pill px-4"
+                      disabled={isLoading}
                     >
                       <i className="bi bi-person-plus-fill me-2"></i>
                       Join the Fun!

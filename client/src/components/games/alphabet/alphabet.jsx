@@ -1,9 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
+import { playSoundEffect } from "../../../hooks/useAudio";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 import "./style.css";
+
+// Import sound effects
+import correctSound from "../../../assets/audio/correct.mp3";
+import incorrectSound from "../../../assets/audio/incorrect.mp3";
+import gameOverSound from "../../../assets/audio/game-over.mp3";
 
 const WORDS = [
   { word: "APPLE", hint: "A red fruit that keeps the doctor away! 🍎" },
@@ -81,6 +87,7 @@ const Alphabet = () => {
 
   const checkAnswer = () => {
     if (userInput.join("") === currentWord) {
+      playSoundEffect(correctSound);
       setMessage("Fantastic! You did it! 🌟");
       setShowConfetti(true);
       setScore(score + 10);
@@ -92,10 +99,12 @@ const Alphabet = () => {
           setCurrentWord(WORDS[currentIndex + 1].word);
           setHint(WORDS[currentIndex + 1].hint);
         } else {
+          playSoundEffect(gameOverSound);
           setMessage("You completed all words! 🏆");
         }
       }, 2000);
     } else {
+      playSoundEffect(incorrectSound);
       setMessage("Almost there! Try again! 💪");
       const container = document.querySelector(".game-container");
       container.classList.add("shake");

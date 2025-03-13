@@ -5,11 +5,11 @@ const {
   Login,
   Home,
 } = require("../controller/user.controller");
-const authMiddleware = require("../middleware/auth.middleware");
+const { auth } = require("../middleware/auth.middleware");
 
 router.post("/login", Login);
 router.post("/signup", Signup);
-router.get("/eegy", authMiddleware, Home);
+router.get("/eegy", auth, Home);
 router.get("/:id/verify/:token", Verify);
 
 module.exports = router;
