@@ -33,13 +33,7 @@ const Homepage = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // const response = await axios.get("http://localhost:5000/api/v1/eegy", {
-        //   headers: {
-        //     Authorization: `Bearer ${Cookies.get("token")}`, // Adjust for your token storage
-        //   },
-        // });
         const token = Cookies.get("token");
-        console.log(token);
 
         if (!token) {
           navigate("/login");
@@ -74,7 +68,8 @@ const Homepage = () => {
     setShowProfile(true);
   };
 
-  const handlePlayButtonClick = () => {
+  const handlePlayButtonClick = (e) => {
+    e.preventDefault();
     setShowPlayGame(true);
   };
 

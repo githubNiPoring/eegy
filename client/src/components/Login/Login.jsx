@@ -44,7 +44,6 @@ const Login = () => {
         const token = response.data.token;
         if (token) {
           Cookies.set("token", token);
-          console.log(token);
         }
 
         // Start background music

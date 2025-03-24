@@ -1,132 +1,182 @@
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../../context/ThemeContext";
 import "./style.css";
-import alphabet from "../../../assets/games/alphabet.png";
-import word_buddy from "../../../assets/games/word_buddy.png";
-import kid_wordle from "../../../assets/games/kid_wordle.png";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import React from "react";
+import wordBuddy from "../../../assets/games/word_buddy.png";
 
 const PlayGame = ({ onClose }) => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const games = [
-    {
-      title: "Word Buddy",
-      image: word_buddy,
-      path: "/word-buddy",
-      description:
-        "Make new friends while learning exciting new words! Perfect for young learners.",
-      badge: "Easy 🌟",
-      emoji: "📚",
-    },
-    {
-      title: "Alphabet Adventure",
-      image: alphabet,
-      path: "/alphabet",
-      description:
-        "Join a magical journey through the alphabet kingdom. Learn letters in a fun way!",
-      badge: "Intermmediate ✨",
-      emoji: "🔤",
-    },
-    {
-      title: "Kid Wordle",
-      image: kid_wordle,
-      path: "/kid-wordle",
-      description:
-        "Can you guess the secret word? A fun word guessing game for clever minds!",
-      badge: "Hard 🎯",
-      emoji: "🎲",
-    },
-  ];
+  // Helper function to get badge text for difficulty level
+  const getBadgeInfo = (difficulty) => {
+    switch (difficulty) {
+      case "Easy":
+        return "Easy 🌟";
+      case "Medium":
+        return "Medium ✨";
+      case "Hard":
+        return "Hard 🎯";
+      default:
+        return "Easy 🌟"; // Default to Easy if not specified
+    }
+  };
+
+  // Helper function to get difficulty weight for sorting
+  const getDifficultyWeight = (difficulty) => {
+    switch (difficulty) {
+      case "Easy":
+        return 1;
+      case "Medium":
+        return 2;
+      case "Hard":
+        return 3;
+      default:
+        return 1; // Default to Easy weight
+    }
+  };
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/v1/games/");
+
+        // Transform the games data
+        const gamesList = response.data.games.map((game) => {
+          // Generate route from title if not provided
+          let route;
+          if (game.route) {
+            route = game.route;
+          } else {
+            route = game.gameTitle.toLowerCase().replace(/\s+/g, "-");
+          }
+
+          // Format the thumbnailUrl properly by just removing leading slashes
+          let imageUrl = "";
+          if (game.thumbnailUrl) {
+            imageUrl = game.thumbnailUrl.replace(/^\/+/, "");
+            console.log(imageUrl);
+          }
+
+          // Set default difficulty if not provided
+          let difficulty;
+          if (game.gameDifficulty) {
+            difficulty = game.gameDifficulty;
+          } else {
+            difficulty = "Easy";
+          }
+
+          return {
+            id: game.id,
+            title: game.gameTitle,
+            description: game.gameDescription,
+            route: route,
+            imageUrl: imageUrl,
+            difficulty: difficulty,
+            badge: getBadgeInfo(difficulty),
+          };
+        });
+
+        // Sort games by difficulty: Easy -> Medium -> Hard
+        const sortedGames = gamesList.sort((a, b) => {
+          return (
+            getDifficultyWeight(a.difficulty) -
+            getDifficultyWeight(b.difficulty)
+          );
+        });
+
+        setGames(sortedGames);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching games:", error);
+        setError("Failed to load games. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchGames();
+  }, []);
+
+  // Navigate to game and close modal
+  const handleGameClick = (game) => {
+    // Make sure we have the correct route format
+    let formattedRoute;
+    if (game.route.startsWith("/")) {
+      formattedRoute = game.route;
+    } else {
+      formattedRoute = `/${game.route}`;
+    }
+
+    // Perform the navigation
+    navigate(formattedRoute);
+
+    // Close the modal after navigation
+    if (onClose) {
+      onClose();
+    }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 50 }}
-      transition={{
-        duration: 0.3,
-        type: "spring",
-        damping: 20,
-        stiffness: 300,
-      }}
-      className="modal-container"
-    >
+    <div className="modal-container">
       <div className="card" data-theme={theme}>
         <div className="card-body">
-          <motion.button
-            className="close-btn"
-            onClick={onClose}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
+          <button className="close-btn" onClick={onClose}>
             <i className="bi bi-x-circle me-2"></i>
             Close
-          </motion.button>
+          </button>
 
           <div className="game-selection-container">
-            <motion.div
-              className="text-center mb-3"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <div className="text-center mb-3">
               <h2 className="game-selection-title">
                 Choose Your Adventure! 🎮
               </h2>
               <p className="game-selection-subtitle">
-                Pick a fun game and start learning! 🌈
+                Pick a fun game and start learning!
               </p>
-            </motion.div>
+            </div>
 
-            <div className="games-grid">
-              {games.map((game, index) => (
-                <motion.div
-                  key={game.title}
-                  className="game-card"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * (index + 1) }}
-                >
-                  <motion.div
-                    className="game-card-content"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate(game.path)}
-                  >
-                    <div className="game-badge">{game.badge}</div>
-                    <div className="game-image-container">
-                      <motion.div
-                        animate={{
-                          y: [0, -8, 0],
-                          rotate: [0, 3, 0],
-                        }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      >
+            {loading ? (
+              <div className="text-center">
+                <div className="spinner-border" role="status"></div>
+                <p>Loading games...</p>
+              </div>
+            ) : error ? (
+              <div className="alert alert-danger" role="alert">
+                {error}
+              </div>
+            ) : (
+              <div className="games-grid">
+                {games.map((game) => (
+                  <div key={game.id || game.title} className="game-card">
+                    <div
+                      className="game-card-content"
+                      onClick={() => handleGameClick(game)}
+                    >
+                      <div className="game-badge">{game.badge}</div>
+
+                      <div className="game-image-container">
                         <img
-                          src={game.image}
+                          src={wordBuddy}
                           className="game-image"
                           alt={game.title}
                         />
-                      </motion.div>
+                      </div>
+                      <h3 className="game-title">{game.title}</h3>
+                      <p className="game-description">{game.description}</p>
                     </div>
-                    <h3 className="game-title">
-                      {game.emoji} {game.title}
-                    </h3>
-                    <p className="game-description">{game.description}</p>
-                  </motion.div>
-                </motion.div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
