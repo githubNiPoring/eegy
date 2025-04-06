@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import "./style.css";
-import trophy from "../../../assets/trophy.png";
+import trophy from "../../../../public/assets/misc/trophy.png";
 
 const GameAchievements = ({ onClose }) => {
   const achievements = [

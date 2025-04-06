@@ -4,7 +4,6 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useAudioContext } from "../../context/AudioContext";
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: "http://localhost:5000/api/v1",
   withCredentials: true,

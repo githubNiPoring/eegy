@@ -6,19 +6,19 @@ import GameOver from "../../modal/game-over/gameover";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 
-import apple from "../../../assets/game-icons/apple.png";
-import coin from "../../../assets/coin.png";
-import correctSound from "../../../assets/audio/correct.mp3";
-import incorrectSound from "../../../assets/audio/incorrect.mp3";
-import gameOverSound from "../../../assets/audio/game-over.mp3";
+import apple from "../../../../public/assets/animals/elephant.png";
+import coin from "../../../../public/assets/misc/coin.png";
+import correctSound from "../../../../public/assets/audio/correct.mp3";
+import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
+import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
 
 import "./style.css";
 
 const WORDS = [
   {
-    word: "Apple",
+    word: "Elephant",
     image: apple,
-    options: ["Apple", "Banana", "Orange", "Grape"],
+    options: ["Elephant", "Giraffe", "Hippo", "Monkey"],
   },
   // Add more words here
 ];

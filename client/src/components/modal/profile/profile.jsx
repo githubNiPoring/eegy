@@ -1,12 +1,89 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 import "./style.css";
-import character from "../../../assets/character.png";
-import alphabet from "../../../assets/games/alphabet.png";
+import character from "../../../../public/assets/characters/character.png";
+import alphabet from "../../../../public/assets/games/alphabet.png";
 
 const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeAvatar, setActiveAvatar] = useState("");
+  const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+
+  const avatarOptions = [
+    "../../../../public/assets/avatar/sheep.png",
+    "../../../../public/assets/avatar/cow.png",
+    "../../../../public/assets/avatar/cat.png",
+    "../../../../public/assets/avatar/kitsune.png",
+    "../../../../public/assets/avatar/owl.png",
+    "../../../../public/assets/avatar/rhino.png",
+  ];
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = Cookies.get("token");
+        const profile = await axios.get(
+          "http://localhost:5000/api/v1/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setActiveAvatar(`../${profile.data.profile.avatar}`);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleAvatarChange = (newAvatar) => {
+    // Normalize the avatar path by removing unnecessary "../"
+    const normalizedAvatar = newAvatar.replace(/^(\.\.\/)+/, "");
+
+    // Update the active avatar in the UI
+    setActiveAvatar(normalizedAvatar);
+    setShowAvatarOptions(false);
+
+    // Send the updated avatar to the backend
+    const updateAvatar = async () => {
+      try {
+        const token = Cookies.get("token"); // Get the authentication token
+        const response = await axios.put(
+          "http://localhost:5000/api/v1/profile/avatar",
+          { avatar: normalizedAvatar }, // Send the avatar as part of the request body
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          console.log("Avatar updated successfully:", response.data.avatarUrl);
+          window.location.reload();
+        } else {
+          console.error("Error updating avatar:", response.data.message);
+        }
+      } catch (error) {
+        if (error.response) {
+          console.error("Error updating avatar:", error.response.data);
+        } else if (error.request) {
+          console.error("No response received:", error.request);
+        } else {
+          console.error("Error:", error.message);
+        }
+      }
+    };
+
+    updateAvatar();
+  };
 
   const renderContent = () => {
     if (activeTab === "info") {
@@ -16,6 +93,48 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Player Avatar Section */}
+          <div className="avatar-section mb-4">
+            <div className="avatar-container">
+              <motion.img
+                src={activeAvatar}
+                alt="Player avatar"
+                className="player-avatar"
+                whileHover={{ scale: 1.05 }}
+              />
+              <motion.button
+                className="change-avatar-btn"
+                onClick={() => setShowAvatarOptions(!showAvatarOptions)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <i className="bi bi-grid-fill me-2"></i>
+                Change Avatar
+              </motion.button>
+            </div>
+
+            {showAvatarOptions && (
+              <motion.div
+                className="avatar-options"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {avatarOptions.map((avatarSrc, index) => (
+                  <motion.img
+                    key={index}
+                    src={avatarSrc}
+                    alt={`Avatar option ${index + 1}`}
+                    className="avatar-option"
+                    onClick={() => handleAvatarChange(avatarSrc)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </div>
+
           {/* Player Stats Card */}
           <div className="stats-card">
             <motion.div
@@ -93,9 +212,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
                   <p>
                     <i className="bi bi-coin text-warning"></i> Coins: 100
                   </p>
-                  <p>
-                    <i className="bi bi-clock"></i> Duration: 12 mins
-                  </p>
+                  <p>🎯Score: 100</p>
                   <p>
                     <i className="bi bi-calendar3"></i> Date: 12/23/24
                   </p>

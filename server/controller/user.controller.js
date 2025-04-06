@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const { Op } = require("sequelize");
 
 const { User, validate } = require("../models/user");
+const UserProfile = require("../models/user_profile");
 const Token = require("../models/token");
 const sendEmail = require("../utils/send.mail");
 const { createSecretToken } = require("../utils/secret.token");
@@ -78,11 +79,10 @@ const Login = async (req, res) => {
 
 const Signup = async (req, res) => {
   try {
-    console.log("Received signup request with data:", {
-      ...req.body,
-      password: "[REDACTED]",
-    });
-
+    // console.log("Received signup request with data:", {
+    //   ...req.body,
+    //   password: "[REDACTED]",
+    // });
     const { error } = validate(req.body);
     if (error) {
       console.log("Validation error:", error.details[0].message);
@@ -121,12 +121,16 @@ const Signup = async (req, res) => {
       verified: false,
     });
 
-    console.log("User created successfully:", {
-      id: user.id,
-      email: user.email,
-      username: user.username,
+    //create userprofile
+    const profile = await UserProfile.create({
+      profileID: user.id,
+      avatar: "../../../public/assets/avatar/player.jpg",
+      userLevel: 1,
+      coins: 50,
+      score: 0,
+      cumulativeScore: 0,
+      achievements: "new explorer 🌎",
     });
-
     // Create verification token
     const verificationToken = await Token.create({
       userId: user.id,
@@ -256,4 +260,60 @@ const Home = async (req, res) => {
   }
 };
 
-module.exports = { Signup, Login, Verify, Home };
+const getUserProfile = async (req, res) => {
+  try {
+    const profile = await UserProfile.findByPk(req.user.id);
+
+    if (!profile) {
+      return res.status(404).json({
+        message: "User profile not found",
+        success: false,
+      });
+    }
+
+    res.status(200).json({
+      profile,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({
+      message: "Error fetching user profile",
+      details: error.message,
+      success: false,
+    });
+  }
+};
+
+const updateAvatar = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const avatar = `../../../${req.body.avatar}`;
+
+    if (!avatar) {
+      return res.status(400).json({
+        message: "Avatar path is required",
+        success: false,
+      });
+    }
+
+    // Update the user's avatar in the database
+    await UserProfile.update({ avatar }, { where: { profileID: userId } });
+
+    res.status(200).json({
+      message: "Avatar updated successfully",
+      avatarUrl: avatar,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error updating avatar:", error);
+    res.status(500).json({
+      message: "Error updating avatar",
+      details: error.message,
+      success: false,
+      error,
+    });
+  }
+};
+
+module.exports = { Signup, Login, Verify, Home, getUserProfile, updateAvatar };

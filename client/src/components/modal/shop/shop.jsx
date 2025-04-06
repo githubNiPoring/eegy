@@ -1,22 +1,45 @@
 import { motion } from "framer-motion";
+import axios from "axios";
+import { useEffect } from "react";
 
-import character from "../../../assets/character.png";
+import character from "../../../../public/assets/characters/character.png";
 
 import "./style.css";
 
 const GameShop = ({ onClose }) => {
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/v1/characters"
+      );
+      console.log("Characters:", response.data);
+    } catch (error) {
+      if (error.response) {
+        console.error("Error updating avatar:", error.response.data);
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error:", error.message);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const shopItems = [
     {
       id: 1,
-      name: "Magic Hat",
+      name: "Magic Cat",
       price: 100,
       image: character,
-      description: "A magical hat that makes you super smart! ✨",
+      description: "He is a magician ✨",
       badge: "Popular! 🌟",
     },
     {
       id: 2,
-      name: "Lucky Charm",
+      name: "Lucky Egg",
       price: 150,
       image: character,
       description: "Brings good luck in all your games! 🍀",
@@ -24,15 +47,15 @@ const GameShop = ({ onClose }) => {
     },
     {
       id: 3,
-      name: "Power Cape",
+      name: "Power Ape",
       price: 200,
       image: character,
-      description: "Fly through your lessons with super speed! 🦸‍♂️",
+      description: "Clumsy Ape 🦸‍♂️",
       badge: "Special! 💫",
     },
     {
       id: 4,
-      name: "Smart Glasses",
+      name: "Smart Lamb",
       price: 120,
       image: character,
       description: "See the answers clearer than ever! 👓",
@@ -86,7 +109,7 @@ const GameShop = ({ onClose }) => {
               >
                 <div className="text-center">
                   <motion.img
-                    src={character}
+                    src={"../../../../public/assets/characters/mr_pickle.png"}
                     alt="character"
                     className="character"
                     animate={{

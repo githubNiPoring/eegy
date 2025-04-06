@@ -1,13 +1,6 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-// Log the configuration (without sensitive data)
-console.log("Database Configuration:");
-console.log(`Host: ${process.env.DB_HOST}`);
-console.log(`Port: ${process.env.DB_PORT}`);
-console.log(`Database: ${process.env.DB_NAME}`);
-console.log(`User: ${process.env.DB_USER}`);
-
 const sequelize = new Sequelize({
   dialect: "mariadb",
   host: process.env.DB_HOST || "localhost",

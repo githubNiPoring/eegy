@@ -12,13 +12,14 @@ import GameSettings from "../modal/settings/settings.jsx";
 import GameProfile from "../modal/profile/profile.jsx";
 
 import "./style.css";
-import character from "../../assets/character.png";
-import chest from "../../assets/chest.png";
-import player from "../../assets/player.jpg";
-import coin from "../../assets/coin.png";
-import shop from "../../assets/shop.png";
-import achievements from "../../assets/achievements.png";
-import settings from "../../assets/settings.png";
+// import character from "../../assets/character.png";
+import character from "../../../public/assets/characters/mr_pickle.png";
+import chest from "../../../public/assets/misc/chest.png";
+import player from "../../../public/assets/avatar/player.jpg";
+import coin from "../../../public/assets/misc/coin.png";
+import shop from "../../../public/assets/misc/shop.png";
+import achievements from "../../../public/assets/misc/achievements.png";
+import settings from "../../../public/assets/misc/settings.png";
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -28,7 +29,13 @@ const Homepage = () => {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showAvatar, setShowAvatar] = useState(false);
   const [profileOpenSource, setProfileOpenSource] = useState("info");
+
+  //user profile
+  const [avatar, setAvatar] = useState("");
+  const [coins, setCoins] = useState(0);
+  const [level, setLevel] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -46,12 +53,25 @@ const Homepage = () => {
           },
         });
 
+        const profile = await axios.get(
+          "http://localhost:5000/api/v1/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setCoins(profile.data.profile.coins);
+        setLevel(profile.data.profile.userLevel);
+        setAvatar(profile.data.profile.avatar);
+
         if (response.data.success !== false) {
           setUser(response.data.user.username);
         }
 
         if (response.data.success === false) {
-          return <div>Loading...</div>; // Display a loading message while fetching
+          return <div>Loading...</div>;
         }
       } catch (error) {
         console.error(error);
@@ -70,6 +90,7 @@ const Homepage = () => {
 
   const handlePlayButtonClick = (e) => {
     e.preventDefault();
+    console.log(`${e} Play button clicked`);
     setShowPlayGame(true);
   };
 
@@ -143,6 +164,21 @@ const Homepage = () => {
           >
             ☁️
           </motion.div>
+          <motion.div
+            animate={{
+              y: [0, 35, 0],
+              x: [0, -35, 0],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="cloud"
+            style={{ right: "15%", top: "30%" }}
+          >
+            ☁️
+          </motion.div>
         </div>
       </div>
       <div className="nav enhanced-nav">
@@ -154,7 +190,7 @@ const Homepage = () => {
             onClick={handleProfile}
             className="player d-flex justify-content-start align-items-center col-lg-3 col-md-4 col-sm-6 col-xs-12 clickable"
           >
-            <img src={player} className="player-logo" alt="player" />
+            <img src={avatar} className="player-logo" alt="player" />
             <div className="d-flex flex-column ms-3">
               <p className="info-text mb-0">Hi, {user}! 👋</p>
               <small className="text-muted">Ready to learn? 🎓</small>
@@ -166,7 +202,7 @@ const Homepage = () => {
           >
             <img src={coin} className="coin-logo" alt="" />
             <div className="d-flex flex-column ms-3">
-              <p className="info-text mb-0">100 coins</p>
+              <p className="info-text mb-0">{coins} coins</p>
               <small className="text-muted">Keep collecting! ⭐</small>
             </div>
           </motion.div>
@@ -175,7 +211,7 @@ const Homepage = () => {
             className="level d-flex justify-content-start justify-content-lg-end justify-content-md-end align-items-center col-lg-3 col-md-4 col-sm-6 col-xs-12"
           >
             <div className="d-flex flex-column align-items-end">
-              <p className="level-text m-0">Level 99</p>
+              <p className="level-text m-0">Level {level}</p>
               <small className="text-muted">Super Star! 🌟</small>
             </div>
           </motion.div>
@@ -186,6 +222,7 @@ const Homepage = () => {
           <div className="row flex-nowrap">
             <div className="col-8 d-flex justify-content-end justify-content-lg-end justify-content-md-center justify-content-sm-end justify-content-xs-end p-0 pb-5 mb-5">
               <motion.img
+                whileHover={{ scale: 5 }}
                 animate={{
                   y: [0, -20, 0],
                 }}
@@ -280,7 +317,7 @@ const Homepage = () => {
             className="size"
             alt="achievements"
           />
-          <p className="mb-2">Rewards 🏆</p>
+          <p className="mb-2">Achievements 🏆</p>
         </div>
         <div className="d-flex flex-column align-items-center mx-2">
           <motion.img
@@ -308,6 +345,9 @@ const Homepage = () => {
             initialTab={profileOpenSource}
             username={user}
           />
+        )}
+        {showAvatar && (
+          <GameProfile onClose={handleCloseAvatar} avatar={avatar} />
         )}
       </AnimatePresence>
     </>

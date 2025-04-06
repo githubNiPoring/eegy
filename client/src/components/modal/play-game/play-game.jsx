@@ -4,7 +4,6 @@ import "./style.css";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import React from "react";
-import wordBuddy from "../../../assets/games/word_buddy.png";
 
 const PlayGame = ({ onClose }) => {
   const navigate = useNavigate();
@@ -41,6 +40,22 @@ const PlayGame = ({ onClose }) => {
     }
   };
 
+  // New helper function to handle image paths
+  const handleImagePath = (thumbnailUrl) => {
+    // If no thumbnail is provided, return a default image
+    if (!thumbnailUrl) {
+      return "/assets/games/default-game.png";
+    }
+
+    // Remove any file system path prefixes
+    const cleanPath = thumbnailUrl.replace(/^.*public\//, "");
+
+    // Ensure the path starts with a forward slash and uses the correct public folder structure
+    const finalPath = `/assets/games/${cleanPath.split("/").pop()}`;
+
+    return finalPath;
+  };
+
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -56,12 +71,8 @@ const PlayGame = ({ onClose }) => {
             route = game.gameTitle.toLowerCase().replace(/\s+/g, "-");
           }
 
-          // Format the thumbnailUrl properly by just removing leading slashes
-          let imageUrl = "";
-          if (game.thumbnailUrl) {
-            imageUrl = game.thumbnailUrl.replace(/^\/+/, "");
-            console.log(imageUrl);
-          }
+          // Process image URL
+          const imageUrl = handleImagePath(game.thumbnailUrl);
 
           // Set default difficulty if not provided
           let difficulty;
@@ -161,7 +172,7 @@ const PlayGame = ({ onClose }) => {
 
                       <div className="game-image-container">
                         <img
-                          src={wordBuddy}
+                          src={game.imageUrl}
                           className="game-image"
                           alt={game.title}
                         />

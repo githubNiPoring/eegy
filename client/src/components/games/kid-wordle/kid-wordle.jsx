@@ -6,10 +6,10 @@ import GameOver from "../../modal/game-over/gameover";
 import "./style.css";
 
 // Import sound effects
-import correctSound from "../../../assets/audio/correct.mp3";
-import incorrectSound from "../../../assets/audio/incorrect.mp3";
-import gameOverSound from "../../../assets/audio/game-over.mp3";
-import keyPressSound from "../../../assets/audio/key-press.mp3";
+import correctSound from "../../../../public/assets/audio/correct.mp3";
+import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
+import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
+import keyPressSound from "../../../../public/assets/audio/key-press.mp3";
 
 const WORD = "POWER"; // Change this word to set the correct answer
 const MAX_GUESSES = 5;

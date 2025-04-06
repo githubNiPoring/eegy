@@ -7,9 +7,9 @@ import { useWindowSize } from "react-use";
 import "./style.css";
 
 // Import sound effects
-import correctSound from "../../../assets/audio/correct.mp3";
-import incorrectSound from "../../../assets/audio/incorrect.mp3";
-import gameOverSound from "../../../assets/audio/game-over.mp3";
+import correctSound from "../../../../public/assets/audio/correct.mp3";
+import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
+import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
 
 const WORDS = [
   { word: "APPLE", hint: "A red fruit that keeps the doctor away! 🍎" },
