@@ -1,18 +1,38 @@
 import { motion } from "framer-motion";
 import axios from "axios";
-import { useEffect } from "react";
-
-import character from "../../../../public/assets/characters/character.png";
+import { useState, useEffect, act } from "react";
+import { jwtDecode } from "jwt-decode";
+import Cookies from "js-cookie";
 
 import "./style.css";
+import Successfully from "../pop-up/successfully.jsx";
 
 const GameShop = ({ onClose }) => {
+  const [characters, setCharacters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const token = Cookies.get("token");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [characterName, setCharacterName] = useState("");
+  const [characterImg, setCharacterImg] = useState("");
+  const [activeCharId, setActiveCharId] = useState(null);
+  const [activeCharImg, setActiveCharImg] = useState(null);
+
   const fetchData = async () => {
     try {
+      // const userID = Cookies.get("userID");
+      const decoded = jwtDecode(token);
+      const userID = decoded.id;
+
       const response = await axios.get(
-        "http://localhost:5000/api/v1/characters"
+        `http://localhost:5000/api/v1/characters/notbought/${userID}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      console.log("Characters:", response.data);
+
+      const data = response.data;
+      setCharacters(data.notBoughtCharacters);
     } catch (error) {
       if (error.response) {
         console.error("Error updating avatar:", error.response.data);
@@ -21,6 +41,8 @@ const GameShop = ({ onClose }) => {
       } else {
         console.error("Error:", error.message);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,40 +50,98 @@ const GameShop = ({ onClose }) => {
     fetchData();
   }, []);
 
-  const shopItems = [
-    {
-      id: 1,
-      name: "Magic Cat",
-      price: 100,
-      image: character,
-      description: "He is a magician ✨",
-      badge: "Popular! 🌟",
-    },
-    {
-      id: 2,
-      name: "Lucky Egg",
-      price: 150,
-      image: character,
-      description: "Brings good luck in all your games! 🍀",
-      badge: "New! ✨",
-    },
-    {
-      id: 3,
-      name: "Power Ape",
-      price: 200,
-      image: character,
-      description: "Clumsy Ape 🦸‍♂️",
-      badge: "Special! 💫",
-    },
-    {
-      id: 4,
-      name: "Smart Lamb",
-      price: 120,
-      image: character,
-      description: "See the answers clearer than ever! 👓",
-      badge: "Cool! 🎯",
-    },
-  ];
+  const activeCharacter = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      const activeCharacterRes = await axios.get(
+        "http://localhost:5000/api/v1/characters/active",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (
+        activeCharacterRes.data.character &&
+        activeCharacterRes.data.character.charID
+      ) {
+        const id = activeCharacterRes.data.character.charID;
+        setActiveCharId(id);
+      } else {
+        console.log("No active character found or unexpected response format");
+        console.log(
+          "Response data structure:",
+          JSON.stringify(activeCharacterRes.data)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching used character:", error);
+    }
+  };
+
+  useEffect(() => {
+    activeCharacter();
+  }, []);
+
+  const getActiveCharacter = async () => {
+    try {
+      const charId = activeCharId;
+      const activeChar = await axios.get(
+        `http://localhost:5000/api/v1/characters/${charId}`
+      );
+      setActiveCharImg(activeChar.data.character.charImg);
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeCharId !== null) {
+      getActiveCharacter();
+    }
+  }, [activeCharId]);
+
+  // Function to get badge text and color based on category
+  const getBadgeInfo = (category) => {
+    switch (category) {
+      case "legendary":
+        return { text: "Legendary! 🌟", color: "#4169e1" };
+      case "rare":
+        return { text: "Rare! ✨", color: "#9370DB" };
+      case "common":
+        return { text: "Common 🍀", color: "#3CB371" };
+      default:
+        return { text: "New! 🎯", color: "#FF7F50" };
+    }
+  };
+
+  // Function to handle the buy button click
+  const handleBuyClick = async (charID, characterName, charimg) => {
+    try {
+      const buyCharacter = await axios.post(
+        `http://localhost:5000/api/v1/characters/buy/${charID}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Open the modal and set the character name
+      setCharacterName(characterName);
+      setCharacterImg(charimg);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error(error.response.data.message);
+      alert(error.response.data.message);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    window.location.reload();
+  };
 
   return (
     <motion.div
@@ -109,7 +189,7 @@ const GameShop = ({ onClose }) => {
               >
                 <div className="text-center">
                   <motion.img
-                    src={"../../../../public/assets/characters/mr_pickle.png"}
+                    src={activeCharImg}
                     alt="character"
                     className="character"
                     animate={{
@@ -143,60 +223,95 @@ const GameShop = ({ onClose }) => {
               </motion.div>
 
               <div className="col-md-8 col-12">
-                <div className="row g-4">
-                  {shopItems.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      className="col-12 col-sm-6"
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * (index + 1) }}
-                    >
-                      <motion.div
-                        className="shop-item"
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="item-badge">{item.badge}</div>
-                        <div className="text-center">
-                          <motion.img
-                            src={item.image}
-                            className="items"
-                            alt={item.name}
-                            animate={{
-                              rotate: [0, 5, 0],
-                              y: [0, -5, 0],
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                            }}
-                          />
-                          <h4 className="item-name">{item.name}</h4>
-                          <p className="item-description">{item.description}</p>
-                          <p className="item-price">
-                            <i className="bi bi-coin me-1 coin-icon"></i>
-                            {item.price}
-                          </p>
-                          <motion.button
-                            className="buy-btn"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                {loading ? (
+                  <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-2">Loading characters...</p>
+                  </div>
+                ) : (
+                  <div className="row">
+                    {characters && characters.length > 0 ? (
+                      characters.map((char) => {
+                        const badge = getBadgeInfo(char.category);
+                        return (
+                          <motion.div
+                            key={char.charID}
+                            className="col-md-6 col-sm-6 col-12 mb-4"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: char.charID * 0.1 }}
                           >
-                            <i className="bi bi-cart-plus me-2"></i>
-                            Buy Now!
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    </motion.div>
-                  ))}
-                </div>
+                            <div className="character-card">
+                              <div className="position-relative">
+                                <span
+                                  className="badge position-absolute top-0 end-0 m-2"
+                                  style={{ backgroundColor: badge.color }}
+                                >
+                                  {badge.text}
+                                </span>
+                                <div className="character-image-container">
+                                  <img
+                                    src={char.charImg}
+                                    alt={char.characterName}
+                                    className="items"
+                                  />
+                                </div>
+                              </div>
+                              <div className="character-info p-3">
+                                <h5 className="character-name mb-0">
+                                  {char.characterName}
+                                </h5>
+                                <p className="character-desc text-body-secondary mb-0">
+                                  {char.charDesc}
+                                </p>
+                                <div className="d-flex align-items-center justify-content-center mb-1 bg-warning rounded-pill p-2 text-white fw-bold">
+                                  <i className="bi bi-c-circle me-2 text-body-warning"></i>
+                                  <p className="mb-0 text-price-color">
+                                    {char.coins}
+                                  </p>
+                                </div>
+                                <motion.button
+                                  className="buy-btn"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() =>
+                                    handleBuyClick(
+                                      char.charID,
+                                      char.characterName,
+                                      char.charImg
+                                    )
+                                  }
+                                >
+                                  <i className="bi bi-cart me-2"></i>
+                                  Buy
+                                </motion.button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-5">
+                        <p>No characters found. Please check back later!</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </motion.div>
+
+      {/* Successfully Modal */}
+      <Successfully
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        characterName={characterName}
+        characterImage={characterImg}
+      />
     </motion.div>
   );
 };

@@ -6,13 +6,15 @@ const {
   createGame,
   updateGame,
   deleteGame,
+  getGameQuestions,
 } = require("../controller/gameController");
 
 // Get all games (public route)
 router.get("/", getAllGames);
 
 // Get specific game (public route)
-router.get("/:id", getGameById);
+router.get("/game/:id", getGameById);
+router.get("/questions", getGameQuestions);
 
 // Protected routes (require authentication)
 router.post("/", auth, createGame);

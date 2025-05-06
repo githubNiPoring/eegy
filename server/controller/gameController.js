@@ -1,4 +1,6 @@
 const { Game, validate } = require("../models/game");
+const GameQuestion = require("../models/game_questions");
+const { Sequelize } = require("sequelize");
 
 // Get all active games
 const getAllGames = async (req, res) => {
@@ -122,10 +124,38 @@ const deleteGame = async (req, res) => {
   }
 };
 
+const getGameQuestions = async (req, res) => {
+  try {
+    // Get 10 random questions
+    const questions = await GameQuestion.findAll({
+      order: Sequelize.literal("RAND()"), // Use random ordering
+      limit: 10, // Limit to 10 questions
+    });
+
+    if (!questions || questions.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: questions,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching game questions",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllGames,
   getGameById,
   createGame,
   updateGame,
   deleteGame,
+  getGameQuestions,
 };

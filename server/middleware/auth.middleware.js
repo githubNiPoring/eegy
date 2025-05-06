@@ -10,7 +10,7 @@ const auth = async (req, res, next) => {
 
   if (!token) {
     return res.status(401).json({
-      message: "You are not authorized to access this route",
+      message: "You are not authorized to access this route 1",
       success: false,
     });
   }
@@ -21,7 +21,7 @@ const auth = async (req, res, next) => {
 
     if (!user) {
       return res.status(401).json({
-        message: "You are not authorized to access this route",
+        message: "You are not authorized to access this route 2",
         success: false,
       });
     }
@@ -29,7 +29,7 @@ const auth = async (req, res, next) => {
     next();
   } catch (error) {
     res.status(500).json({
-      message: "You are not authorized to access this route",
+      message: "You are not authorized to access this route 3",
       details: error.message,
       success: false,
     });

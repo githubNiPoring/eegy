@@ -12,8 +12,7 @@ import GameSettings from "../modal/settings/settings.jsx";
 import GameProfile from "../modal/profile/profile.jsx";
 
 import "./style.css";
-// import character from "../../assets/character.png";
-import character from "../../../public/assets/characters/mr_pickle.png";
+import character from "../../../public/assets/characters/fitness_dog.png";
 import chest from "../../../public/assets/misc/chest.png";
 import player from "../../../public/assets/avatar/player.jpg";
 import coin from "../../../public/assets/misc/coin.png";
@@ -36,6 +35,8 @@ const Homepage = () => {
   const [avatar, setAvatar] = useState("");
   const [coins, setCoins] = useState(0);
   const [level, setLevel] = useState(0);
+  const [activeCharId, setActiveCharId] = useState(null);
+  const [activeCharImg, setActiveCharImg] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -83,6 +84,57 @@ const Homepage = () => {
     fetchUserData();
   }, []);
 
+  const activeCharacter = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      const activeCharacterRes = await axios.get(
+        "http://localhost:5000/api/v1/characters/active",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (
+        activeCharacterRes.data.character &&
+        activeCharacterRes.data.character.charID
+      ) {
+        const id = activeCharacterRes.data.character.charID;
+        setActiveCharId(id);
+      } else {
+        console.log("No active character found or unexpected response format");
+        console.log(
+          "Response data structure:",
+          JSON.stringify(activeCharacterRes.data)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+  useEffect(() => {
+    activeCharacter();
+  }, []);
+
+  const getActiveCharacter = async () => {
+    try {
+      const charId = activeCharId;
+      const activeChar = await axios.get(
+        `http://localhost:5000/api/v1/characters/${charId}`
+      );
+      setActiveCharImg(activeChar.data.character.charImg);
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (activeCharId !== null) {
+      getActiveCharacter();
+    }
+  }, [activeCharId]);
   const handleChestClick = () => {
     setProfileOpenSource("characters");
     setShowProfile(true);
@@ -231,7 +283,7 @@ const Homepage = () => {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                src={character}
+                src={activeCharImg}
                 className="character"
                 alt="Character"
               />

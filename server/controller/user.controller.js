@@ -4,9 +4,11 @@ const { Op } = require("sequelize");
 
 const { User, validate } = require("../models/user");
 const UserProfile = require("../models/user_profile");
+const UserBoughtCharacters = require("../models/user_bought_characters");
 const Token = require("../models/token");
 const sendEmail = require("../utils/send.mail");
 const { createSecretToken } = require("../utils/secret.token");
+const { stat } = require("fs");
 
 const Login = async (req, res) => {
   try {
@@ -79,10 +81,6 @@ const Login = async (req, res) => {
 
 const Signup = async (req, res) => {
   try {
-    // console.log("Received signup request with data:", {
-    //   ...req.body,
-    //   password: "[REDACTED]",
-    // });
     const { error } = validate(req.body);
     if (error) {
       console.log("Validation error:", error.details[0].message);
@@ -119,6 +117,15 @@ const Signup = async (req, res) => {
       birthdate,
       password: encryptedPassword,
       verified: false,
+    });
+
+    //Create a free character for the user
+    const freeCharacter = await UserBoughtCharacters.create({
+      userID: user.id,
+      charID: 1,
+      purchaseDate: new Date(),
+      status: "1",
+      charVal: 0,
     });
 
     //create userprofile

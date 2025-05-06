@@ -4,15 +4,18 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 import "./style.css";
-import character from "../../../../public/assets/characters/character.png";
+// import character from "../../../../public/assets/characters/character.png";
 import alphabet from "../../../../public/assets/games/alphabet.png";
+import { use } from "react";
 
 const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [activeAvatar, setActiveAvatar] = useState("");
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
+  const [characters, setCharacters] = useState([]);
 
   const avatarOptions = [
+    "../../../../public/assets/avatar/player.jpg",
     "../../../../public/assets/avatar/sheep.png",
     "../../../../public/assets/avatar/cow.png",
     "../../../../public/assets/avatar/cat.png",
@@ -43,8 +46,42 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      try {
+        const availableCharacters = await axios.get(
+          "http://localhost:5000/api/v1/characters/bought",
+          {
+            headers: {
+              Authorization: `Bearer ${Cookies.get("token")}`,
+            },
+          }
+        );
+
+        const charIds = availableCharacters.data.boughtCharacters.map(
+          (character) => character.charID
+        );
+
+        const characterPromises = charIds.map((id) =>
+          axios.get(`http://localhost:5000/api/v1/characters/${id}`)
+        );
+
+        const characterResponses = await Promise.all(characterPromises);
+
+        const characterData = characterResponses.map(
+          (response) => response.data
+        );
+
+        setCharacters(characterData);
+      } catch (error) {
+        console.error("Error fetching characters:", error);
+      }
+    };
+
+    fetchCharacters();
+  }, []);
+
   const handleAvatarChange = (newAvatar) => {
-    // Normalize the avatar path by removing unnecessary "../"
     const normalizedAvatar = newAvatar.replace(/^(\.\.\/)+/, "");
 
     // Update the active avatar in the UI
@@ -83,6 +120,24 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     };
 
     updateAvatar();
+  };
+
+  const handleUseCharacter = async (charID) => {
+    try {
+      console.log("Selected Character ID:", charID);
+      const token = Cookies.get("token");
+      const updateCharcter = await axios.post(
+        `http://localhost:5000/api/v1/characters/update/${charID}`,
+        {}, // Empty body or send data if needed
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Error using character:", error);
+    }
   };
 
   const renderContent = () => {
@@ -232,7 +287,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {[...Array(4)].map((_, index) => (
+          {characters.map((character, index) => (
             <motion.div
               key={index}
               className="character-card"
@@ -241,7 +296,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
               transition={{ delay: index * 0.1 }}
             >
               <motion.img
-                src={character}
+                src={character.character.charImg}
                 alt={`Character ${index + 1}`}
                 className="character-img"
                 animate={{
@@ -254,11 +309,14 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
                   ease: "easeInOut",
                 }}
               />
-              <h3 className="stat-label">Character {index + 1}</h3>
+              <h3 className="stat-label">
+                {character.character.characterName}
+              </h3>
               <motion.button
                 className="use-character-btn"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => handleUseCharacter(character.character.charID)}
               >
                 <i className="bi bi-person-check me-2"></i>
                 Use Character

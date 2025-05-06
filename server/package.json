@@ -16,6 +16,7 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
+    "fs": "^0.0.1-security",
     "joi": "^17.13.3",
     "joi-password-complexity": "^5.2.0",
     "jsonwebtoken": "^9.0.2",

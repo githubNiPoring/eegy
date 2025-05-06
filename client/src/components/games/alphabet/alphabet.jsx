@@ -4,20 +4,13 @@ import { useTheme } from "../../../context/ThemeContext";
 import { playSoundEffect } from "../../../hooks/useAudio";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
+import axios from "axios";
 import "./style.css";
 
 // Import sound effects
 import correctSound from "../../../../public/assets/audio/correct.mp3";
 import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
 import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
-
-const WORDS = [
-  { word: "APPLE", hint: "A red fruit that keeps the doctor away! 🍎" },
-  { word: "ZEBRA", hint: "Black and white stripes, loves to gallop! 🦓" },
-  { word: "HOUSE", hint: "A cozy place where families live! 🏠" },
-  { word: "TIGER", hint: "A big cat with orange and black stripes! 🐯" },
-  { word: "BEACH", hint: "Sand, waves, and lots of fun! 🏖️" },
-];
 
 const KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -38,9 +31,11 @@ const getRandomMissingIndexes = (word) => {
 const Alphabet = () => {
   const { theme } = useTheme();
   const { width, height } = useWindowSize();
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentWord, setCurrentWord] = useState(WORDS[currentIndex].word);
-  const [hint, setHint] = useState(WORDS[currentIndex].hint);
+  const [currentWord, setCurrentWord] = useState("");
+  const [hint, setHint] = useState("");
   const [missingIndexes, setMissingIndexes] = useState([]);
   const [userInput, setUserInput] = useState([]);
   const [message, setMessage] = useState("");
@@ -48,16 +43,61 @@ const Alphabet = () => {
   const [score, setScore] = useState(0);
   const inputRefs = useRef([]);
 
-  useEffect(() => {
-    // First, create the boxes with solid outlines (non-missing letters)
-    const newMissingIndexes = getRandomMissingIndexes(currentWord);
-    setMissingIndexes(newMissingIndexes);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(
+        "http://localhost:5000/api/v1/games/questions"
+      );
+      const data = response.data.questions;
+      console.log("Fetched data:", data);
 
-    // Initialize user input with letters, empty strings only for missing indexes
-    const newUserInput = currentWord.split("").map((letter, index) => {
-      return newMissingIndexes.includes(index) ? "" : letter;
-    });
-    setUserInput(newUserInput);
+      // Format the data to match our game structure
+      const formattedQuestions = data.map((question) => ({
+        word: question.correctAnswer.toUpperCase(),
+        hint: question.questionDesc,
+        imageURL: question.imageURL,
+      }));
+
+      setQuestions(formattedQuestions);
+
+      // Set initial word and hint
+      if (formattedQuestions.length > 0) {
+        setCurrentWord(formattedQuestions[0].word);
+        setHint(formattedQuestions[0].hint);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // This effect updates the game when currentIndex changes
+  useEffect(() => {
+    if (questions.length > 0 && currentIndex < questions.length) {
+      setCurrentWord(questions[currentIndex].word);
+      setHint(questions[currentIndex].hint);
+    }
+  }, [currentIndex, questions]);
+
+  useEffect(() => {
+    if (currentWord) {
+      // First, create the boxes with solid outlines (non-missing letters)
+      const newMissingIndexes = getRandomMissingIndexes(currentWord);
+      setMissingIndexes(newMissingIndexes);
+
+      // Initialize user input with letters, empty strings only for missing indexes
+      const newUserInput = currentWord.split("").map((letter, index) => {
+        return newMissingIndexes.includes(index) ? "" : letter;
+      });
+      setUserInput(newUserInput);
+    }
   }, [currentWord]);
 
   const handleDrop = (event, index) => {
@@ -94,10 +134,9 @@ const Alphabet = () => {
 
       setTimeout(() => {
         setShowConfetti(false);
-        if (currentIndex < WORDS.length - 1) {
-          setCurrentIndex(currentIndex + 1);
-          setCurrentWord(WORDS[currentIndex + 1].word);
-          setHint(WORDS[currentIndex + 1].hint);
+        if (currentIndex < questions.length - 1) {
+          // Move to the next question
+          setCurrentIndex((prevIndex) => prevIndex + 1);
         } else {
           playSoundEffect(gameOverSound);
           setMessage("You completed all words! 🏆");
@@ -120,6 +159,18 @@ const Alphabet = () => {
     }
   };
 
+  if (loading) {
+    return <div className="loading">Loading questions...</div>;
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="error">
+        No questions available. Please try again later.
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className={`game-wrapper ${theme}`}
@@ -129,7 +180,7 @@ const Alphabet = () => {
     >
       {showConfetti && <Confetti width={width} height={height} />}
 
-      <div className="game-container">
+      <div className="game-container p-4">
         <motion.div
           className="game-header"
           initial={{ y: -20 }}
@@ -137,20 +188,33 @@ const Alphabet = () => {
           transition={{ duration: 0.5, type: "spring" }}
         >
           <h1 className="game-title">Alphabet Adventure 🎯</h1>
-          <div className="score-display">Score: {score}</div>
+          <div className="score-display text-center">
+            Question {currentIndex + 1} of {questions.length}
+          </div>
         </motion.div>
+        <div className="d-flex justify-content-center align-items-center">
+          {questions[currentIndex] && questions[currentIndex].imageURL && (
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              src={questions[currentIndex].imageURL}
+              alt={questions[currentIndex].word}
+              className="question-image p-0"
+            />
+          )}
 
+          <motion.div
+            className="hint-container m-3 w-100"
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="hint-text">{hint}</h2>
+          </motion.div>
+        </div>
         <motion.div
-          className="hint-container"
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="hint-text">{hint}</h2>
-        </motion.div>
-
-        <motion.div
-          className="word-container"
+          className="word-container mx-0 my-3"
           initial={{ y: 20 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5 }}
@@ -176,7 +240,7 @@ const Alphabet = () => {
         </motion.div>
 
         <motion.div
-          className="keyboard-container"
+          className="keyboard-container m-0"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -198,16 +262,16 @@ const Alphabet = () => {
             </div>
           ))}
         </motion.div>
-
-        <motion.button
-          className="check-button"
-          onClick={checkAnswer}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Check Answer
-        </motion.button>
-
+        <div className="d-flex justify-content-center">
+          <motion.button
+            className="check-button m-1"
+            onClick={checkAnswer}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Check Answer
+          </motion.button>
+        </div>
         <AnimatePresence>
           {message && (
             <motion.div
