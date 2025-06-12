@@ -5,8 +5,12 @@ import { playSoundEffect } from "../../../hooks/useAudio";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./style.css";
+import GameOver from "../../modal/game-over/gameover"; // Import the GameOver component
 
+import coin from "../../../../public/assets/misc/coin.png";
 // Import sound effects
 import correctSound from "../../../../public/assets/audio/correct.mp3";
 import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
@@ -41,13 +45,15 @@ const Alphabet = () => {
   const [message, setMessage] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
+  const [showGameOver, setShowGameOver] = useState(false);
   const inputRefs = useRef([]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:5000/api/v1/games/questions"
+        "http://localhost:5000/api/v1/games/things"
       );
       const data = response.data.questions;
       console.log("Fetched data:", data);
@@ -125,12 +131,35 @@ const Alphabet = () => {
     event.dataTransfer.setData("text", letter);
   };
 
+  const resetGame = () => {
+    setCurrentIndex(0);
+    setScore(0);
+    setCoins(0);
+    setShowGameOver(false);
+    setMessage("");
+    // Reset to first question
+    if (questions.length > 0) {
+      setCurrentWord(questions[0].word);
+      setHint(questions[0].hint);
+    }
+  };
+
+  const handleGameOverClose = () => {
+    // This will navigate to homepage (handled in GameOver component)
+    setShowGameOver(false);
+  };
+
+  const handleRetry = () => {
+    resetGame();
+  };
+
   const checkAnswer = () => {
     if (userInput.join("") === currentWord) {
       playSoundEffect(correctSound);
-      setMessage("Fantastic! You did it! 🌟");
+      toast.success("Fantastic! You did it! 🌟");
       setShowConfetti(true);
       setScore(score + 10);
+      setCoins(coins + 2);
 
       setTimeout(() => {
         setShowConfetti(false);
@@ -139,22 +168,19 @@ const Alphabet = () => {
           setCurrentIndex((prevIndex) => prevIndex + 1);
         } else {
           playSoundEffect(gameOverSound);
-          setMessage("You completed all words! 🏆");
+          toast.info("You completed all words! 🏆");
         }
       }, 2000);
     } else {
+      // Wrong answer - show game over modal
       playSoundEffect(incorrectSound);
-      setMessage("Almost there! Try again! 💪");
+      playSoundEffect(gameOverSound);
+      setShowGameOver(true);
+
       const container = document.querySelector(".game-container");
       container.classList.add("shake");
       setTimeout(() => {
         container.classList.remove("shake");
-        // Reset only the missing letters, keep the solid outline letters
-        const resetInput = currentWord.split("").map((letter, index) => {
-          return missingIndexes.includes(index) ? "" : letter;
-        });
-        setUserInput(resetInput);
-        setMessage("");
       }, 1000);
     }
   };
@@ -182,7 +208,7 @@ const Alphabet = () => {
 
       <div className="game-container p-4">
         <motion.div
-          className="game-header"
+          className="game-header m-0"
           initial={{ y: -20 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, type: "spring" }}
@@ -192,6 +218,17 @@ const Alphabet = () => {
             Question {currentIndex + 1} of {questions.length}
           </div>
         </motion.div>
+
+        <motion.div
+          className="coin-display"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <img src={coin} alt="Coin" className="coin-icon" />
+          <span className="coin-count">{coins}</span>
+        </motion.div>
+
         <div className="d-flex justify-content-center align-items-center">
           {questions[currentIndex] && questions[currentIndex].imageURL && (
             <motion.img
@@ -285,6 +322,31 @@ const Alphabet = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Game Over Modal */}
+      <AnimatePresence>
+        {showGameOver && (
+          <GameOver
+            onClose={handleGameOverClose}
+            onRetry={handleRetry}
+            score={score / 10}
+            coins={coins}
+          />
+        )}
+      </AnimatePresence>
+
+      <ToastContainer
+        position="bottom-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme === "dark" ? "dark" : "light"}
+      />
     </motion.div>
   );
 };

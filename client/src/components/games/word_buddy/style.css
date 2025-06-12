@@ -1,71 +1,70 @@
-.coin-size {
-  width: 25px;
-  height: 25px;
-}
-
-.question-icon {
-  max-width: 50%;
-  min-width: 150px;
-}
-
-.bg-color {
-  background-color: #839cb0 !important;
-}
-
-.pad-10 {
-  padding: 0 100px !important;
-}
-
 .game-wrapper {
   min-height: 100vh;
-  padding: 2rem;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-primary);
   transition: all 0.3s ease;
+  overflow: hidden;
+  padding: 0;
 }
 
 .game-wrapper.dark {
-  --bg-primary: #2f3136;
-  --card-bg: #36393f;
+  --bg-primary: #2a3774;
+  --card-bg: #36397c;
   --text-primary: #ffffff;
-  --button-bg: #7289da;
-  --button-hover: #5865f2;
+  --button-bg: #ff6b6b;
+  --button-hover: #ff8e8e;
+  --header-bg: #1f2b5f;
 }
 
 .game-wrapper.light {
-  --bg-primary: #fff9e6;
+  --bg-primary: #ffeb99;
   --card-bg: #ffffff;
   --text-primary: #663300;
-  --button-bg: #ffd700;
-  --button-hover: #ffa500;
+  --button-bg: #ff95c8;
+  --button-hover: #ff6eb0;
+  --header-bg: #ffda6a;
 }
 
 .game-container {
-  max-width: 800px;
+  width: 90%;
+  max-width: 700px;
+  height: 90vh;
   margin: 0 auto;
   background: var(--card-bg);
   border-radius: 25px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  position: relative;
+  border: 8px solid #ffffff;
 }
 
-.game-header {
+/* .game-header {
+  background: var(--header-bg);
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-}
+} */
 
-.game-title {
+/* .game-title {
   font-family: "Comic Sans MS", cursive;
   font-size: 2.5rem;
   color: var(--text-primary);
   margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-}
+  text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(45deg, #ff6b6b, #7878ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+} */
 
 .stats-container {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: center;
 }
 
@@ -77,6 +76,9 @@
   font-size: 1.2rem;
   color: var(--text-primary);
   font-weight: bold;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.5rem;
+  border-radius: 15px;
 }
 
 .coin-icon {
@@ -84,50 +86,110 @@
   height: 30px;
 }
 
+.game-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem;
+  overflow: hidden;
+}
+
 .word-card {
   background: var(--card-bg);
   border-radius: 20px;
-  padding: 2rem;
-  margin: 2rem 0;
+  padding: 1rem;
   text-align: center;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border: 4px dashed #ff95c8;
 }
 
 .word-image {
-  max-width: 200px;
-  height: auto;
-  margin-bottom: 1.5rem;
+  max-width: 150px;
+  max-height: 150px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+
+.hint-text {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  font-family: "Comic Sans MS", cursive;
+  margin: 1rem 0;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .message {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: bold;
   margin-top: 1rem;
-  color: var(--text-primary);
+  color: #ff6b6b;
+  font-family: "Comic Sans MS", cursive;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2);
 }
 
 .options-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: auto;
+  height: auto;
 }
 
 .option-button {
   background: var(--button-bg);
-  color: var(--text-primary);
+  color: white;
   border: none;
   border-radius: 15px;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
+  padding: 1rem;
+  font-size: 1.3rem;
   font-family: "Comic Sans MS", cursive;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  height: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .option-button:hover {
   background: var(--button-hover);
   transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+}
+
+.option-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid var(--button-bg);
+  border-radius: 50%;
 }
 
 .shake {
@@ -154,38 +216,95 @@
   }
 }
 
+/* Background decorations */
+.decoration {
+  position: absolute;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.decoration-1 {
+  top: 10%;
+  left: 5%;
+  font-size: 3rem;
+}
+
+.decoration-2 {
+  bottom: 10%;
+  right: 5%;
+  font-size: 4rem;
+}
+
+.decoration-3 {
+  top: 50%;
+  right: 10%;
+  font-size: 3.5rem;
+}
+
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-height: 700px) {
   .game-container {
-    padding: 1rem;
+    height: 95vh;
+  }
+
+  .word-image {
+    max-width: 120px;
+    max-height: 120px;
+  }
+
+  .hint-text {
+    font-size: 1.2rem;
+    margin: 0.5rem 0;
   }
 
   .game-title {
     font-size: 2rem;
   }
 
-  .options-container {
-    grid-template-columns: 1fr;
+  .option-button {
+    font-size: 1.1rem;
+    padding: 0.8rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .game-container {
+    width: 95%;
+    height: 95vh;
+    border-width: 5px;
   }
 
   .word-image {
-    max-width: 150px;
+    max-width: 100px;
+    max-height: 100px;
   }
-}
 
-/* Animations */
-@keyframes float {
-  0% {
-    transform: translateY(0px);
+  .game-header {
+    padding: 0.5rem;
   }
-  50% {
-    transform: translateY(-10px);
-  }
-  100% {
-    transform: translateY(0px);
-  }
-}
 
-.word-image {
-  animation: float 3s ease-in-out infinite;
+  .game-title {
+    font-size: 1.8rem;
+  }
+
+  .stats-container {
+    gap: 0.5rem;
+  }
+
+  .coin-display,
+  .score-display {
+    font-size: 1rem;
+    padding: 0.3rem;
+  }
+
+  .coin-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .option-button {
+    font-size: 1rem;
+    padding: 0.5rem;
+    min-height: 50px;
+  }
 }

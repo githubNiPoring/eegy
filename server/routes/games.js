@@ -1,6 +1,9 @@
 const router = require("express").Router();
 const { auth } = require("../middleware/auth.middleware");
 const {
+  getAnimals,
+  getThings,
+  getFruit,
   getAllGames,
   getGameById,
   createGame,
@@ -8,6 +11,10 @@ const {
   deleteGame,
   getGameQuestions,
 } = require("../controller/gameController");
+
+router.get("/animals", getAnimals);
+router.get("/things", getThings);
+router.get("/fruit", getFruit);
 
 // Get all games (public route)
 router.get("/", getAllGames);

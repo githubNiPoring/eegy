@@ -12,6 +12,8 @@ import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
 import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
 import keyPressSound from "../../../../public/assets/audio/key-press.mp3";
 
+import coin from "../../../../public/assets/misc/coin.png";
+
 const MAX_GUESSES = 5;
 const KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -36,7 +38,8 @@ const KidWordle = () => {
   const [showGameOver, setShowGameOver] = useState(false);
   const [message, setMessage] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(1);
+  const [coins, setCoins] = useState(0);
   const [missingIndexes, setMissingIndexes] = useState([]);
   const [userInput, setUserInput] = useState([]);
 
@@ -45,7 +48,7 @@ const KidWordle = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:5000/api/v1/games/questions"
+        "http://localhost:5000/api/v1/games/animals"
       );
       const data = response.data.questions;
       console.log("Fetched data:", data);
@@ -111,6 +114,28 @@ const KidWordle = () => {
     }
   }, [currentIndex, questions]);
 
+  const resetGame = () => {
+    setCurrentIndex(0);
+    setScore(0);
+    setCoins(0);
+    setShowGameOver(false);
+    setMessage("");
+    // Reset to first question
+    if (questions.length > 0) {
+      setCurrentWord(questions[0].word);
+      setHint(questions[0].hint);
+    }
+  };
+
+  const handleGameOverClose = () => {
+    // This will navigate to homepage (handled in GameOver component)
+    setShowGameOver(false);
+  };
+
+  const handleRetry = () => {
+    resetGame();
+  };
+
   const handleSubmit = async () => {
     if (currentGuess.length !== currentWord.length || gameOver) return;
 
@@ -144,6 +169,10 @@ const KidWordle = () => {
 
     if (currentGuess === currentWord) {
       playSoundEffect(correctSound);
+
+      // Add 1 to score and 3 to coins when user answers correctly
+      setScore((prevScore) => prevScore + 1);
+      setCoins((prevCoins) => prevCoins + 3);
 
       // Instead of immediately ending the game, check if there are more questions
       if (currentIndex < questions.length - 1) {
@@ -180,12 +209,7 @@ const KidWordle = () => {
       }
     }
   };
-  // This effect handles keyboard input
-  // useEffect(() => {
-  //   const handleKeyPress = (e) => handleInput(e.key);
-  //   window.addEventListener("keydown", handleKeyPress);
-  //   return () => window.removeEventListener("keydown", handleKeyPress);
-  // }, [currentGuess, gameOver]);
+
   useEffect(() => {
     const handleKeyPress = (e) => {
       // Don't process key events if game is over
@@ -225,7 +249,10 @@ const KidWordle = () => {
       playSoundEffect(correctSound);
       setMessage("Fantastic! You did it! 🌟");
       setShowConfetti(true);
-      setScore((prevScore) => prevScore + 10);
+
+      // Add 1 to score and 3 to coins when user answers correctly
+      setScore((prevScore) => prevScore + 1);
+      setCoins((prevCoins) => prevCoins + 3);
 
       setTimeout(() => {
         setShowConfetti(false);
@@ -371,7 +398,16 @@ const KidWordle = () => {
           ))}
           <span>🎯</span>
         </motion.h1>
-
+        <div className="d-flex justify-content-between align-items-center mb-0">
+          <p className="h3 text-warning d-flex align-items-center justify-content-center mb-0">
+            <img src={coin} alt="coin" width="30" className="me-2" />
+            {coins}
+          </p>
+          <div className="score-display text-center bg-warning p-2 rounded-pill">
+            Question {score} of {questions.length}
+          </div>
+        </div>
+        <hr />
         <motion.div className="word-grid">
           {[...Array(MAX_GUESSES)].map((_, i) => (
             <motion.div
@@ -429,6 +465,7 @@ const KidWordle = () => {
                   className={`keyboard-key ${
                     key.length > 1 ? "special" : ""
                   } ${getKeyboardKeyClassName(key)}`}
+                  onClick={() => handleInput(key)}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -440,7 +477,17 @@ const KidWordle = () => {
         </motion.div>
       </div>
 
-      {showGameOver && <GameOver onClose={handleCloseGameOver} />}
+      <AnimatePresence>
+        {showGameOver && (
+          <GameOver
+            onClose={handleGameOverClose}
+            onRetry={handleRetry}
+            score={score}
+            coins={coins}
+          />
+        )}
+      </AnimatePresence>
+      {/* {showGameOver && <GameOver onClose={handleCloseGameOver} />} */}
     </motion.div>
   );
 };
