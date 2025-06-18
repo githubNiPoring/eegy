@@ -490,7 +490,7 @@ const Alphabet = () => {
 
       try {
         // Save game results (game over - not completed)
-        const saveSuccess = await saveGameResults(score, coins);
+        const saveSuccess = await saveGameResults(score, coins, true, userLevel);
         const saveProfileSuccess = await saveGameProfile(
           userLevel,
           coins,

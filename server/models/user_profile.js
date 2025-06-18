@@ -40,10 +40,6 @@ const UserProfile = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    achievements: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
   },
   {
     tableName: "user_profile",

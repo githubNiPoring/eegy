@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 
 import "./style.css";
 import Successfully from "../pop-up/successfully.jsx";
+import coin from "../../../../public/assets/misc/coin.png";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const GameShop = ({ onClose }) => {
@@ -18,6 +19,7 @@ const GameShop = ({ onClose }) => {
   const [characterImg, setCharacterImg] = useState("");
   const [activeCharId, setActiveCharId] = useState(null);
   const [activeCharImg, setActiveCharImg] = useState(null);
+  const [userCoins, setUserCoins] = useState(0);
 
   const fetchData = async () => {
     try {
@@ -64,6 +66,13 @@ const GameShop = ({ onClose }) => {
         }
       );
 
+      const profile = await axios.get(`${BASE_URL}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setUserCoins(profile.data.profile.coins);
       if (
         activeCharacterRes.data.character &&
         activeCharacterRes.data.character.charID
@@ -192,7 +201,7 @@ const GameShop = ({ onClose }) => {
                   <motion.img
                     src={activeCharImg}
                     alt="character"
-                    className="character"
+                    className="character m-0"
                     animate={{
                       y: [0, -20, 0],
                       rotate: [0, 5, 0],
@@ -219,6 +228,36 @@ const GameShop = ({ onClose }) => {
                       Your Character
                     </h3>
                     <p className="text-muted">Customize your adventure! ✨</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="coin-display-container d-flex flex-column align-items-center my-4"
+                  >
+                    <img
+                      src={coin}
+                      className="coin-logo"
+                      alt="coin"
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        objectFit: "contain",
+                        marginBottom: "8px",
+                        filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: "2rem",
+                        fontWeight: "bold",
+                        color: "#FFD700",
+                        marginBottom: "2px",
+                      }}
+                    >
+                      {userCoins} coins
+                    </div>
                   </motion.div>
                 </div>
               </motion.div>

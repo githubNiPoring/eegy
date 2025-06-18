@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 
 import "./style.css";
 import alphabet from "../../../../public/assets/games/word_buddy.png";
+import coin from "../../../../public/assets/misc/coin.png";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
@@ -13,6 +14,10 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
   const [characters, setCharacters] = useState([]);
   const [userHistory, setUserHistory] = useState([]);
+  const [userHistoryCount, setUserHistoryCount] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [totalCoins, setTotalCoins] = useState(0);
+  const [accumulatedScore, setAccumulatedScore] = useState(0);
 
   const avatarOptions = [
     "../../../../public/assets/avatar/player.jpg",
@@ -33,8 +38,6 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
         },
       });
       console.log("Game history fetched:", response.data);
-
-      // Sort history by date (latest first) - assuming datePlayed is in a sortable format
       const sortedHistory = response.data.data.sort((a, b) => {
         // Convert dates to Date objects for proper comparison
         const dateA = new Date(a.datePlayed || 0);
@@ -50,6 +53,35 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
 
   useEffect(() => {
     fetchHistory();
+  }, []);
+
+  const fetchProfileInfo = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/v1/history/user-game-history-count`,
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token")}`,
+          },
+        }
+      );
+      setUserHistoryCount(response.data.count);
+
+      const userProfile = await axios.get(`${BASE_URL}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get("token")}`,
+        },
+      });
+      console.log("User profile fetched:", userProfile.data.profile);
+      setCurrentLevel(userProfile.data.profile.userLevel);
+      setTotalCoins(userProfile.data.profile.coins);
+      setAccumulatedScore(userProfile.data.profile.cumulativeScore);
+    } catch (error) {
+      console.error("Error fetching game history count:", error);
+    }
+  };
+  useEffect(() => {
+    fetchProfileInfo();
   }, []);
 
   useEffect(() => {
@@ -238,7 +270,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
               transition={{ delay: 0.2 }}
             >
               <h3 className="stat-label">Total Games Played</h3>
-              <div className="stat-value">247 🎮</div>
+              <div className="stat-value">{userHistoryCount} 🎮</div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -258,7 +290,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
               transition={{ delay: 0.4 }}
             >
               <h3 className="stat-label">Current Level</h3>
-              <div className="stat-value">99 ⭐</div>
+              <div className="stat-value">{currentLevel} ⭐</div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -266,15 +298,29 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
               transition={{ delay: 0.5 }}
             >
               <h3 className="stat-label">Total Coins</h3>
-              <div className="stat-value">100 🪙</div>
+              <div className="stat-value">
+                {totalCoins}{" "}
+                <img
+                  src={coin}
+                  className="coin-logo"
+                  alt="coin"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    objectFit: "contain",
+                    marginBottom: "8px",
+                    filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.15))",
+                  }}
+                />
+              </div>
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
             >
-              <h3 className="stat-label">Characters Unlocked</h3>
-              <div className="stat-value">4/12 🎭</div>
+              <h3 className="stat-label">Accumulated Score</h3>
+              <div className="stat-value">{accumulatedScore} 🎯</div>
             </motion.div>
           </div>
         </motion.div>

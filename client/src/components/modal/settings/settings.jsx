@@ -101,7 +101,7 @@ const GameSettings = ({ onClose }) => {
             </div>
           </motion.div>
 
-          {/* Theme Settings */}
+          {/* Theme Settings
           <motion.div
             className="settings-section"
             initial={{ opacity: 0, y: 20 }}
@@ -123,7 +123,7 @@ const GameSettings = ({ onClose }) => {
                 <span className="toggle-slider"></span>
               </label>
             </button>
-          </motion.div>
+          </motion.div> */}
 
           {/* Account Settings */}
           <motion.div

@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+const dotenv = require("dotenv");
 
 const { User, validate } = require("../models/user");
 const UserProfile = require("../models/user_profile");
@@ -136,7 +137,6 @@ const Signup = async (req, res) => {
       coins: 50,
       score: 0,
       cumulativeScore: 0,
-      achievements: "new explorer 🌎",
     });
     // Create verification token
     const verificationToken = await Token.create({
@@ -144,8 +144,9 @@ const Signup = async (req, res) => {
       token: crypto.randomBytes(32).toString("hex"),
     });
 
+    const baseURL = process.env.BASE_URL;
     // Generate verification URL (pointing to frontend)
-    const verificationUrl = `http://localhost:5173/verify/${user.id}/${verificationToken.token}`;
+    const verificationUrl = `${baseURL}5173/verify/${user.id}/${verificationToken.token}`;
 
     // Send email with verification link
     await sendEmail(

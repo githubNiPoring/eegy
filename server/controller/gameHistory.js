@@ -98,6 +98,35 @@ const updateWordBuddyHistory = async (req, res) => {
   }
 };
 
+const getUserGameHistoryCount = async (req, res) => {
+  try {
+    const userID = req.user.id;
+    const gameHistoryCount = await GameHistory.count({
+      where: { userID: userID },
+    });
+
+    if (!gameHistoryCount || gameHistoryCount.length === 0) {
+      return res.status(200).json({
+        message: "No game history found for this user",
+        success: true,
+        count: 0,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Game history fetched successfully",
+      success: true,
+      count: gameHistoryCount,
+    });
+  } catch (error) {
+    console.error("Error fetching user game history count:", error);
+    return res.status(500).json({
+      message: "Error fetching user game history count",
+      details: error.message,
+      success: false,
+    });
+  }
+};
 const getUserGameHistory = async (req, res) => {
   try {
     const userID = req.user.id;
@@ -180,6 +209,7 @@ module.exports = {
   updateWordleHistory,
   updateAlphabetHistory,
   updateWordBuddyHistory,
+  getUserGameHistoryCount,
   getUserGameHistory,
   updateUserProfile,
 };
