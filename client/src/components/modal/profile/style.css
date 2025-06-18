@@ -39,7 +39,7 @@
 }
 
 .profile-header h2 {
-  font-family: "Comic Sans MS", cursive;
+  font-family: "Comic Sans MS";
   font-size: 2.2rem;
   margin: 0;
 }
@@ -67,7 +67,7 @@
   border-radius: 15px;
   padding: 12px 25px;
   color: #663300;
-  font-family: "Comic Sans MS", cursive;
+  font-family: "Comic Sans MS";
   font-size: 1.2rem;
   font-weight: bold;
   transition: all 0.3s ease;
@@ -103,14 +103,14 @@
   font-weight: bold;
   color: #ffa500;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
-  font-family: "Comic Sans MS", cursive;
+  font-family: "Comic Sans MS";
 }
 
 .stat-label {
   color: #663300;
   font-size: 1.2rem;
   margin-bottom: 5px;
-  font-family: "Comic Sans MS", cursive;
+  font-family: "Comic Sans MS";
 }
 
 .history-item {
@@ -140,7 +140,7 @@
 
 .history-content h3 {
   color: #663300;
-  font-family: "Comic Sans MS", cursive;
+  font-family: "Comic Sans MS";
   font-size: 1.4rem;
   margin: 0 0 5px 0;
 }

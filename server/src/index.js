@@ -8,6 +8,8 @@ const connection = require("./config");
 const charRoutes = require("../routes/characters");
 const userRoutes = require("../routes/user.routes");
 const gameRoutes = require("../routes/games");
+const gameAchievementsRoutes = require("../routes/achievements");
+const gameHistoryRoutes = require("../routes/history");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -15,7 +17,7 @@ const port = process.env.PORT || 5000;
 // Configure CORS with more specific options
 app.use(
   cors({
-    origin: "http://localhost:5173", // Your React app's URL
+    origin: "http://192.168.1.9:5173", // Your React app's URL
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -32,7 +34,9 @@ app.use(cookieParser(process.env.JWT_SECRET));
 app.use("/api/v1/characters", charRoutes);
 app.use("/api/v1", userRoutes);
 app.use("/api/v1/games", gameRoutes);
+app.use("/api/v1/achievements", gameAchievementsRoutes);
+app.use("/api/v1/history", gameHistoryRoutes);
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(`Server is running on port ${port}`);
 });

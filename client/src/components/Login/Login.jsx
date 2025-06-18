@@ -4,8 +4,10 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useAudioContext } from "../../context/AudioContext";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
 const api = axios.create({
-  baseURL: "http://localhost:5000/api/v1",
+  baseURL: `${BASE_URL}/api/v1`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

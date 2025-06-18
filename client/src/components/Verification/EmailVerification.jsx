@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const EmailVerification = () => {
   const [verificationStatus, setVerificationStatus] = useState({
     loading: true,
@@ -19,7 +20,7 @@ const EmailVerification = () => {
         console.log("Attempting verification for:", { userId, token });
 
         const response = await axios.get(
-          `http://localhost:5000/api/v1/${userId}/verify/${token}`,
+          `${BASE_URL}/api/v1/${userId}/verify/${token}`,
           { withCredentials: true }
         );
 

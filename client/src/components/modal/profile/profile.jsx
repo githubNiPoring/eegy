@@ -4,15 +4,15 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 import "./style.css";
-// import character from "../../../../public/assets/characters/character.png";
-import alphabet from "../../../../public/assets/games/alphabet.png";
-import { use } from "react";
+import alphabet from "../../../../public/assets/games/word_buddy.png";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [activeAvatar, setActiveAvatar] = useState("");
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
   const [characters, setCharacters] = useState([]);
+  const [userHistory, setUserHistory] = useState([]);
 
   const avatarOptions = [
     "../../../../public/assets/avatar/player.jpg",
@@ -24,18 +24,43 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     "../../../../public/assets/avatar/rhino.png",
   ];
 
+  const fetchHistory = async () => {
+    try {
+      const token = Cookies.get("token");
+      const response = await axios.get(`${BASE_URL}/api/v1/history/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Game history fetched:", response.data);
+
+      // Sort history by date (latest first) - assuming datePlayed is in a sortable format
+      const sortedHistory = response.data.data.sort((a, b) => {
+        // Convert dates to Date objects for proper comparison
+        const dateA = new Date(a.datePlayed || 0);
+        const dateB = new Date(b.datePlayed || 0);
+        return dateB - dateA; // Latest first (descending order)
+      });
+
+      setUserHistory(sortedHistory);
+    } catch (error) {
+      console.error("Error fetching game history:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const token = Cookies.get("token");
-        const profile = await axios.get(
-          "http://localhost:5000/api/v1/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const profile = await axios.get(`${BASE_URL}/api/v1/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         setActiveAvatar(`../${profile.data.profile.avatar}`);
       } catch (error) {
@@ -50,7 +75,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     const fetchCharacters = async () => {
       try {
         const availableCharacters = await axios.get(
-          "http://localhost:5000/api/v1/characters/bought",
+          `${BASE_URL}/api/v1/characters/bought`,
           {
             headers: {
               Authorization: `Bearer ${Cookies.get("token")}`,
@@ -63,7 +88,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
         );
 
         const characterPromises = charIds.map((id) =>
-          axios.get(`http://localhost:5000/api/v1/characters/${id}`)
+          axios.get(`${BASE_URL}/api/v1/characters/${id}`)
         );
 
         const characterResponses = await Promise.all(characterPromises);
@@ -93,7 +118,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
       try {
         const token = Cookies.get("token"); // Get the authentication token
         const response = await axios.put(
-          "http://localhost:5000/api/v1/profile/avatar",
+          `${BASE_URL}/api/v1/profile/avatar`,
           { avatar: normalizedAvatar }, // Send the avatar as part of the request body
           {
             headers: {
@@ -127,7 +152,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
       console.log("Selected Character ID:", charID);
       const token = Cookies.get("token");
       const updateCharcter = await axios.post(
-        `http://localhost:5000/api/v1/characters/update/${charID}`,
+        `${BASE_URL}/api/v1/characters/update/${charID}`,
         {}, // Empty body or send data if needed
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -138,6 +163,21 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     } catch (error) {
       console.error("Error using character:", error);
     }
+  };
+
+  // Helper function to get background color based on score
+  const getHistoryItemStyle = (score) => {
+    const numericScore = score || 0;
+    if (numericScore < 100) {
+      return {
+        backgroundColor: "#ffebee", // Light red background for incomplete
+        borderLeft: "4px solid #dc3545", // Red left border accent
+      };
+    }
+    return {
+      backgroundColor: "#fff8e1", // Light yellow/cream background for complete (or keep default)
+      borderLeft: "4px solid #28a745", // Green left border accent
+    };
   };
 
   const renderContent = () => {
@@ -248,33 +288,65 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {[...Array(3)].map((_, index) => (
-            <motion.div
-              key={index}
-              className="history-item"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div className="d-flex align-items-center">
-                <img src={alphabet} alt="alphabet" className="history-img" />
-                <div className="history-content">
-                  <h3>Alphabet Adventure</h3>
-                  <p>
-                    <i className="bi bi-star-fill text-warning"></i> Level:
-                    16-20
-                  </p>
-                  <p>
-                    <i className="bi bi-coin text-warning"></i> Coins: 100
-                  </p>
-                  <p>🎯Score: 100</p>
-                  <p>
-                    <i className="bi bi-calendar3"></i> Date: 12/23/24
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          {userHistory && userHistory.length > 0 ? (
+            userHistory.map((historyItem, index) => {
+              const historyStyle = getHistoryItemStyle(historyItem.score);
+
+              return (
+                <motion.div
+                  key={index}
+                  className="history-item"
+                  style={historyStyle}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="d-flex align-items-center">
+                    <img
+                      src={historyItem.gameImage || alphabet}
+                      alt={historyItem.gameName || "game"}
+                      className="history-img"
+                    />
+                    <div className="history-content">
+                      <h3>{historyItem.gameName || "Game Name"}</h3>
+                      <p>
+                        <i className="bi bi-star-fill text-warning"></i> Level:{" "}
+                        {historyItem.lvlReached || "N/A"}
+                      </p>
+                      <p>
+                        <i className="bi bi-coin text-warning"></i> Coins:{" "}
+                        {historyItem.earnedCoin || 0}
+                      </p>
+                      <p>
+                        🎯Score: {historyItem.score || 0}
+                        {historyItem.score < 100 && (
+                          <span
+                            style={{
+                              fontSize: "0.85em",
+                              marginLeft: "8px",
+                              color: "#dc3545",
+                            }}
+                          >
+                            (Incomplete -{" "}
+                            {10 - Math.floor((historyItem.score || 0) / 10)}{" "}
+                            questions remaining)
+                          </span>
+                        )}
+                      </p>
+                      <p>
+                        <i className="bi bi-calendar3"></i> Date:{" "}
+                        {historyItem.datePlayed || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="text-center py-5">
+              <p>No game history found. Please check back later!</p>
+            </div>
+          )}
         </motion.div>
       );
     }

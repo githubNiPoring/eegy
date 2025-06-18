@@ -7,6 +7,7 @@ import Cookies from "js-cookie";
 import "./style.css";
 import Successfully from "../pop-up/successfully.jsx";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const GameShop = ({ onClose }) => {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ const GameShop = ({ onClose }) => {
       const userID = decoded.id;
 
       const response = await axios.get(
-        `http://localhost:5000/api/v1/characters/notbought/${userID}`,
+        `${BASE_URL}/api/v1/characters/notbought/${userID}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -55,7 +56,7 @@ const GameShop = ({ onClose }) => {
       const token = Cookies.get("token");
 
       const activeCharacterRes = await axios.get(
-        "http://localhost:5000/api/v1/characters/active",
+        `${BASE_URL}/api/v1/characters/active`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -89,7 +90,7 @@ const GameShop = ({ onClose }) => {
     try {
       const charId = activeCharId;
       const activeChar = await axios.get(
-        `http://localhost:5000/api/v1/characters/${charId}`
+        `${BASE_URL}/api/v1/characters/${charId}`
       );
       setActiveCharImg(activeChar.data.character.charImg);
     } catch (error) {
@@ -121,7 +122,7 @@ const GameShop = ({ onClose }) => {
   const handleBuyClick = async (charID, characterName, charimg) => {
     try {
       const buyCharacter = await axios.post(
-        `http://localhost:5000/api/v1/characters/buy/${charID}`,
+        `${BASE_URL}/api/v1/characters/buy/${charID}`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -210,7 +211,7 @@ const GameShop = ({ onClose }) => {
                     <h3
                       style={{
                         color: "#663300",
-                        fontFamily: "'Comic Sans MS', cursive",
+                        fontFamily: "Comic Sans MS",
                         marginTop: "20px",
                         textShadow: "1px 1px 0 #fff",
                       }}

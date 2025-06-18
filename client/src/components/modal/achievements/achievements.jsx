@@ -2,49 +2,28 @@ import { motion } from "framer-motion";
 import "./style.css";
 import trophy from "../../../../public/assets/misc/trophy.png";
 
+import { useState } from "react";
+import React, { useEffect } from "react";
+import axios from "axios";
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const GameAchievements = ({ onClose }) => {
-  const achievements = [
-    {
-      id: 1,
-      name: "Word Master",
-      description:
-        "Learn 50 new words! You're becoming a vocabulary champion! 📚",
-      progress: 80,
-      status: "40/50 words",
-      image: trophy,
-      badge: "Almost there! 🌟",
-    },
-    {
-      id: 2,
-      name: "Alphabet Hero",
-      description:
-        "Master all the letters of the alphabet! You're doing great! 🔤",
-      progress: 100,
-      status: "Completed!",
-      image: trophy,
-      badge: "Completed! 🏆",
-    },
-    {
-      id: 3,
-      name: "Spelling Wizard",
-      description:
-        "Cast your spelling magic and get 10 words right in a row! ✨",
-      progress: 30,
-      status: "3/10 streak",
-      image: trophy,
-      badge: "Keep going! 💫",
-    },
-    {
-      id: 4,
-      name: "Reading Explorer",
-      description: "Unlock this achievement by reading your first story! 📖",
-      progress: 0,
-      status: "Locked",
-      image: trophy,
-      badge: "Coming soon! 🔒",
-      locked: true,
-    },
-  ];
+  const [gameAchievements, setGameAchievements] = useState([]);
+
+  const fetchAchievements = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/v1/achievements/`);
+      console.log("Achievements fetched:", response.data.achievements);
+      setGameAchievements(response.data.achievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      // Handle error appropriately, e.g., show a notification or log it
+    }
+  };
+
+  useEffect(() => {
+    fetchAchievements();
+  }, []);
 
   return (
     <motion.div
@@ -113,7 +92,7 @@ const GameAchievements = ({ onClose }) => {
                     <h3
                       style={{
                         color: "#663300",
-                        fontFamily: "'Comic Sans MS', cursive",
+                        fontFamily: "Comic Sans MS",
                         marginTop: "20px",
                         textShadow: "1px 1px 0 #fff",
                       }}
@@ -129,64 +108,71 @@ const GameAchievements = ({ onClose }) => {
 
               <div className="col-md-8 col-12">
                 <div className="row g-4">
-                  {achievements.map((achievement, index) => (
-                    <motion.div
-                      key={achievement.id}
-                      className="col-12 col-sm-6"
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * (index + 1) }}
-                    >
-                      <motion.div
-                        className={`achievement-item ${
-                          achievement.locked ? "achievement-locked" : ""
-                        }`}
-                        whileHover={!achievement.locked ? { scale: 1.03 } : {}}
-                        whileTap={!achievement.locked ? { scale: 0.98 } : {}}
-                      >
-                        <div className="achievement-badge">
-                          {achievement.badge}
-                        </div>
-                        <div className="text-center">
-                          <motion.img
-                            src={achievement.image}
-                            className="achievement-image"
-                            alt={achievement.name}
-                            animate={
-                              !achievement.locked
-                                ? {
-                                    rotate: [0, 5, 0],
-                                    y: [0, -5, 0],
-                                  }
-                                : {}
+                  {gameAchievements && gameAchievements.length > 0 ? (
+                    gameAchievements.map((achievement, index) => {
+                      return (
+                        <motion.div
+                          key={achievement.id}
+                          className="col-12 col-sm-6"
+                          initial={{ opacity: 0, y: 30 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 * (index + 1) }}
+                        >
+                          <motion.div
+                            className={`achievement-item ${
+                              achievement.locked ? "achievement-locked" : ""
+                            }`}
+                            whileHover={
+                              !achievement.locked ? { scale: 1.03 } : {}
                             }
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                            }}
-                          />
-                          <div className="achievement-details">
-                            <h4 className="achievement-name">
-                              {achievement.name}
-                            </h4>
-                            <p className="achievement-description">
-                              {achievement.description}
-                            </p>
-                            <div className="achievement-progress">
-                              <div
-                                className="progress-bar"
-                                style={{ width: `${achievement.progress}%` }}
-                              ></div>
+                            whileTap={
+                              !achievement.locked ? { scale: 0.98 } : {}
+                            }
+                          >
+                            <div className="achievement-badge">
+                              {achievement.category}
                             </div>
-                            <p className="achievement-status">
-                              {achievement.status}
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    </motion.div>
-                  ))}
+                            <div className="text-center">
+                              <motion.img
+                                src={achievement.iconUrl}
+                                className="achievement-image mt-5"
+                                alt={achievement.name}
+                                animate={
+                                  !achievement.locked
+                                    ? {
+                                        rotate: [0, 5, 0],
+                                        y: [0, -5, 0],
+                                      }
+                                    : {}
+                                }
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut",
+                                }}
+                              />
+                              <div className="achievement-details">
+                                <h4 className="achievement-name">
+                                  {achievement.name}
+                                </h4>
+                                <p className="achievement-description">
+                                  {achievement.description}
+                                </p>
+
+                                <p className="achievement-status">
+                                  {achievement.status}
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      );
+                    })
+                  ) : (
+                    <div className="col-12 text-center">
+                      <p className="text-muted">No achievements found.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

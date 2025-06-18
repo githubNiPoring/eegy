@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
 import { playSoundEffect } from "../../../hooks/useAudio";
 import GameOver from "../../modal/game-over/gameover";
+import Congratulation from "../../modal/congratulations/congratulations";
 import axios from "axios";
+import Cookies from "js-cookie";
 import "./style.css";
 
 // Import sound effects
@@ -21,6 +23,8 @@ const KEYBOARD_ROWS = [
   ["Z", "X", "C", "V", "B", "N", "M", "Backspace", "Enter"],
 ];
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
 const KidWordle = () => {
   const { theme } = useTheme();
 
@@ -36,20 +40,22 @@ const KidWordle = () => {
   const [usedLetters, setUsedLetters] = useState({});
   const [invalidWord, setInvalidWord] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showCongratulation, setShowCongratulation] = useState(false);
   const [message, setMessage] = useState("");
   const [showConfetti, setShowConfetti] = useState(false);
-  const [score, setScore] = useState(1);
+  const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [missingIndexes, setMissingIndexes] = useState([]);
   const [userInput, setUserInput] = useState([]);
+  const [userLevel, setUserLevel] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Fetch data function
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/v1/games/animals"
-      );
+      const response = await axios.get(`${BASE_URL}/api/v1/games/animals`);
       const data = response.data.questions;
       console.log("Fetched data:", data);
 
@@ -90,6 +96,123 @@ const KidWordle = () => {
     fetchData();
   }, []);
 
+  const fetchUserProfile = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      const response = await axios.get(`${BASE_URL}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.profile) {
+        setUserLevel(response.data.profile.userLevel);
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const saveGameResults = async (gameScore, gameCoins, updateUserLevel) => {
+    try {
+      setIsSaving(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return false;
+      }
+
+      // Prepare data according to your API structure
+      const gameData = {
+        gameID: 3,
+        earnedCoin: gameCoins,
+        score: gameScore,
+        lvlReached: updateUserLevel,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/wordle`,
+        gameData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game results:", error);
+    }
+  };
+
+  const saveGameProfile = async (userLevel, coins, score) => {
+    try {
+      setIsSavingProfile(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return false;
+      }
+
+      const gameProfileData = {
+        userLevel: userLevel,
+        coins: coins,
+        score: score,
+      };
+
+      console.log("Saving profile with:", gameProfileData); // Add logging
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/user-update`,
+        gameProfileData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Profile update response:", response.data); // Add logging
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game profile:", error);
+      if (error.response) {
+        console.error("Response error:", error.response.data);
+        console.error("Response status:", error.response.status);
+      }
+      return false;
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
   useEffect(() => {
     if (questions.length > 0 && currentIndex < questions.length) {
       const newWord = questions[currentIndex].word;
@@ -115,7 +238,7 @@ const KidWordle = () => {
   }, [currentIndex, questions]);
 
   const resetGame = () => {
-    setCurrentIndex(0);
+    setCurrentIndex(1);
     setScore(0);
     setCoins(0);
     setShowGameOver(false);
@@ -125,6 +248,7 @@ const KidWordle = () => {
       setCurrentWord(questions[0].word);
       setHint(questions[0].hint);
     }
+    window.location.reload();
   };
 
   const handleGameOverClose = () => {
@@ -134,6 +258,10 @@ const KidWordle = () => {
 
   const handleRetry = () => {
     resetGame();
+  };
+  const handlePlayAgain = () => {
+    resetGame();
+    setShowCongratulation(false);
   };
 
   const handleSubmit = async () => {
@@ -187,16 +315,49 @@ const KidWordle = () => {
           setUsedLetters({});
         }, 1500);
       } else {
-        // This was the last question, now we can end the game
-        setGameOver(true);
-        setShowGameOver(true);
-        setMessage("You completed all words! 🏆");
+        try {
+          const newUserLevel = userLevel + 3;
+          const finalScore = score + 1;
+          const finalCoins = coins + 3;
+
+          const saveSuccess = await saveGameResults(
+            finalScore * 10,
+            finalCoins,
+            newUserLevel
+          );
+          const saveProfileSuccess = await saveGameProfile(
+            newUserLevel,
+            coins,
+            score
+          );
+
+          if (saveSuccess && saveProfileSuccess) {
+            setShowCongratulation(true);
+            setMessage("You completed all words! 🏆");
+          } else {
+            // Handle save failure
+            console.error("Failed to save game results");
+            setShowCongratulation(true); // Still show modal even if save fails
+          }
+        } catch (error) {
+          console.error("Error saving game results:", error);
+        }
       }
     } else if (newGuesses.length >= MAX_GUESSES) {
       playSoundEffect(gameOverSound);
       setGameOver(true);
-      setShowGameOver(true);
-      setMessage(`The word was: ${currentWord}`);
+
+      const saveSuccess = await saveGameResults(score * 10, coins, userLevel);
+      const saveProfileSuccess = await saveGameProfile(userLevel, coins, score);
+
+      if (saveSuccess && saveProfileSuccess) {
+        setShowGameOver(true);
+        setMessage("You completed all words! 🏆");
+      } else {
+        // Handle save failure
+        console.error("Failed to save game results");
+        setShowGameOver(true); // Still show modal even if save fails
+      }
     } else {
       // Play different sounds based on how many correct letters there are
       const correctCount = statusArray.filter(
@@ -207,6 +368,7 @@ const KidWordle = () => {
       } else {
         playSoundEffect(incorrectSound);
       }
+      setCoins((prevCoins) => Math.max(prevCoins - 1, 0));
     }
   };
 
@@ -285,6 +447,9 @@ const KidWordle = () => {
 
   const handleCloseGameOver = () => {
     setShowGameOver(false);
+  };
+  const handleCloseModal = () => {
+    setShowCongratulation(false);
   };
 
   const handleInput = (key) => {
@@ -404,7 +569,7 @@ const KidWordle = () => {
             {coins}
           </p>
           <div className="score-display text-center bg-warning p-2 rounded-pill">
-            Question {score} of {questions.length}
+            Question {Math.min(currentIndex + 1, 10)} of {questions.length}
           </div>
         </div>
         <hr />
@@ -486,8 +651,15 @@ const KidWordle = () => {
             coins={coins}
           />
         )}
+        {showCongratulation && (
+          <Congratulation
+            onClose={handleCloseModal}
+            onPlayAgain={handlePlayAgain}
+            score={score}
+            coins={coins}
+          />
+        )}
       </AnimatePresence>
-      {/* {showGameOver && <GameOver onClose={handleCloseGameOver} />} */}
     </motion.div>
   );
 };

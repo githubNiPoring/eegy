@@ -3,9 +3,11 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "../../../context/ThemeContext";
 import { playSoundEffect } from "../../../hooks/useAudio";
 import GameOver from "../../modal/game-over/gameover";
+import Congratulation from "../../modal/congratulations/congratulations";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 import coin from "../../../../public/assets/misc/coin.png";
 import correctSound from "../../../../public/assets/audio/correct.mp3";
@@ -14,20 +16,27 @@ import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
 
 import "./style.css";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
 const Wordbuddy = () => {
   const { theme } = useTheme();
   const { width, height } = useWindowSize();
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showCongratulation, setShowCongratulation] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [questions, setQuestions] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [score, setScore] = useState(1);
+  const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [message, setMessage] = useState("");
   const [currentWord, setCurrentWord] = useState("");
   const [hint, setHint] = useState("");
+  const [userLevel, setUserLevel] = useState();
+  const [newUserLevel, setNewUserLevel] = useState();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Decorative emojis for the background
   const decorations = ["🍎", "🍌", "🍓", "🍊", "🥝", "🍉", "🍇"];
@@ -42,17 +51,134 @@ const Wordbuddy = () => {
     ]);
   }, []);
 
+  const fetchUserProfile = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      const response = await axios.get(`${BASE_URL}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.profile) {
+        setUserLevel(response.data.profile.userLevel || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  // Function to save game results to database using your existing API
+  const saveGameResults = async (gameScore, gameCoins, userLevelToSave) => {
+    try {
+      setIsSaving(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return false;
+      }
+
+      // Prepare data according to your API structure
+      const gameData = {
+        gameID: 1, // Word Buddy game ID
+        earnedCoin: gameCoins,
+        score: gameScore * 10,
+        lvlReached: userLevelToSave,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/word-buddy`,
+        gameData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game results:", error);
+      // Log more details about the error
+      if (error.response) {
+        console.error("Response error:", error.response.data);
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveGameProfile = async (userLevel, coins, score) => {
+    try {
+      setIsSavingProfile(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      const gameProfileData = {
+        userLevel: userLevel,
+        coins: coins,
+        score: score,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/user-update`,
+        gameProfileData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game profile:", error);
+      // Log more details about the error
+      if (error.response) {
+        console.error("Response error:", error.response.data);
+      }
+    }
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/v1/games/fruit"
-      );
+      const response = await axios.get(`${BASE_URL}/api/v1/games/fruit`);
       const data = response.data.questions;
-      console.log("Fetched data:", data);
 
       // Keep the original structure instead of reformatting
       setQuestions(data);
+      console.log("Fetched questions:", data);
 
       // Set up initial question with options
       if (data.length > 0) {
@@ -103,37 +229,6 @@ const Wordbuddy = () => {
       }
     }
 
-    // If we don't have enough words, generate some kid-friendly fruit names
-    while (wrongOptions.length < 3) {
-      const fruitOptions = [
-        "Apple",
-        "Banana",
-        "Orange",
-        "Grape",
-        "Pear",
-        "Pineapple",
-        "Watermelon",
-        "Kiwi",
-        "Blueberry",
-        "Peach",
-        "Cherry",
-        "Lemon",
-        "Raspberry",
-      ];
-      const randomOption =
-        fruitOptions[Math.floor(Math.random() * fruitOptions.length)];
-
-      if (
-        !wrongOptions.includes(randomOption) &&
-        randomOption !== correctWord
-      ) {
-        wrongOptions.push(randomOption);
-      } else {
-        // Try another random fruit if this one is already used
-        continue;
-      }
-    }
-
     return wrongOptions;
   };
 
@@ -158,17 +253,42 @@ const Wordbuddy = () => {
     setCurrentOptions(shuffleArray(allOptions));
   };
 
-  const handleAnswer = (selectedWord) => {
+  const resetGame = () => {
+    setCurrentWordIndex(0);
+    setScore(0);
+    setCoins(0);
+    setShowGameOver(false);
+    setMessage("");
+    setShowConfetti(false);
+    // Reset to first question
+    if (questions.length > 0) {
+      setupCurrentQuestion(0);
+    }
+    window.location.reload();
+  };
+
+  const handleRetry = () => {
+    resetGame();
+  };
+
+  const handlePlayAgain = () => {
+    resetGame();
+    setShowCongratulation(false);
+  };
+
+  const handleAnswer = async (selectedWord) => {
     if (!currentWord) return;
 
     if (selectedWord === currentWord) {
       playSoundEffect(correctSound);
       setShowConfetti(true);
-      setScore(score + 1);
-      setCoins(coins + 1);
       setMessage("Correct! 🎉");
+      const newScore = score + 1;
+      const newCoins = coins + 1;
+      setScore(newScore);
+      setCoins(newCoins);
 
-      setTimeout(() => {
+      setTimeout(async () => {
         setShowConfetti(false);
         setMessage("");
         // Check if there are more questions
@@ -177,35 +297,79 @@ const Wordbuddy = () => {
           setCurrentWordIndex(nextIndex);
           setupCurrentQuestion(nextIndex);
         } else {
-          playSoundEffect(gameOverSound);
-          setShowGameOver(true);
+          setMessage("Congratulations! You completed all questions! 🏆");
+
+          const newUserLevel = userLevel + 1;
+
+          setNewUserLevel(newUserLevel);
+          // Save game results before showing congratulations modal
+          const saveSuccess = await saveGameResults(
+            newScore,
+            newCoins,
+            newUserLevel
+          );
+
+          const saveProfileSuccess = await saveGameProfile(
+            newUserLevel,
+            newCoins,
+            newScore * 10
+          );
+
+          if (saveSuccess && saveProfileSuccess) {
+            setShowCongratulation(true);
+          } else {
+            // Handle save failure - maybe show an error message
+            console.error("Failed to save game results");
+            setShowCongratulation(true); // Still show modal even if save fails
+          }
         }
       }, 2000);
     } else {
       playSoundEffect(incorrectSound);
-      setMessage("Try again! ❌");
-      setCoins(Math.max(0, coins - 2));
+      setMessage("Wrong answer! ❌");
 
-      // Shake animation will be handled by CSS
+      // Add shake animation
       const container = document.querySelector(".game-container");
-      container.classList.add("shake");
-      setTimeout(() => {
-        container.classList.remove("shake");
-        setMessage("");
+      if (container) {
+        container.classList.add("shake");
+        setTimeout(() => {
+          container.classList.remove("shake");
+        }, 1000);
+      }
+
+      // Save game results before showing game over modal
+      setTimeout(async () => {
+        playSoundEffect(gameOverSound);
+
+        // Save game results (game over - not completed)
+        const saveSuccess = await saveGameResults(score, coins, userLevel);
+        const saveProfileSuccess = await saveGameProfile(
+          userLevel,
+          coins,
+          score * 10
+        );
+        if (saveSuccess && saveProfileSuccess) {
+          setShowGameOver(true);
+        } else {
+          // Handle save failure
+          console.error("Failed to save game results");
+          setShowGameOver(true); // Still show modal even if save fails
+        }
       }, 500);
     }
   };
 
   const handleCloseGameOver = () => {
+    // This will navigate to homepage (handled in GameOver component)
     setShowGameOver(false);
-    setCurrentWordIndex(0);
-    setScore(0);
-    setCoins(100);
-    setupCurrentQuestion(0);
+  };
+
+  const handleCloseModal = () => {
+    setShowCongratulation(false);
   };
 
   return (
-    <div className={`game-wrapper ${theme}`}>
+    <div className={`game-wrapper ${theme} p-1`}>
       <motion.div
         className="decoration decoration-1"
         animate={{
@@ -268,19 +432,9 @@ const Wordbuddy = () => {
               {coins}
             </p>
             <div className="score-display text-center bg-warning p-2 rounded-pill">
-              Question {score} of {questions.length}
+              Question {currentWordIndex + 1} of
+              {questions.length}
             </div>
-            {/* <div className="coin-display">
-              <motion.img
-                src={coin}
-                alt="coin"
-                className="coin-icon"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              />
-              <span>{coins}</span>
-            </div>
-            <div className="score-display">Score: {score}</div> */}
           </div>
         </div>
 
@@ -332,6 +486,7 @@ const Wordbuddy = () => {
                     key={index}
                     className="option-button"
                     onClick={() => handleAnswer(option)}
+                    disabled={isSaving && isSavingProfile}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
@@ -346,21 +501,38 @@ const Wordbuddy = () => {
           </div>
         </div>
 
-        {loading && (
+        {(loading || isSaving || isSavingProfile) && (
           <div className="loading">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               className="loading-spinner"
             />
-            <p>Loading questions...</p>
+            <p>{loading ? "Loading questions..." : "Saving results..."}</p>
           </div>
         )}
       </motion.div>
 
-      {showGameOver && (
-        <GameOver onClose={handleCloseGameOver} score={score} coins={coins} />
-      )}
+      <AnimatePresence>
+        {showGameOver && (
+          <GameOver
+            onClose={handleCloseGameOver}
+            onRetry={handleRetry}
+            score={score}
+            coins={coins}
+            userLevel={userLevel}
+          />
+        )}
+        {showCongratulation && (
+          <Congratulation
+            onClose={handleCloseModal}
+            onPlayAgain={handlePlayAgain}
+            score={score}
+            coins={coins}
+            userLevel={userLevel + 1}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

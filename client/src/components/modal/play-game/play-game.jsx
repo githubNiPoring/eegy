@@ -5,6 +5,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import React from "react";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 const PlayGame = ({ onClose }) => {
   const navigate = useNavigate();
   const { theme } = useTheme();
@@ -59,7 +60,7 @@ const PlayGame = ({ onClose }) => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/v1/games/");
+        const response = await axios.get(`${BASE_URL}/api/v1/games/`);
 
         // Transform the games data
         const gamesList = response.data.games.map((game) => {
@@ -133,61 +134,63 @@ const PlayGame = ({ onClose }) => {
   };
 
   return (
-    <div className="modal-container">
-      <div className="card" data-theme={theme}>
-        <div className="card-body">
-          <button className="close-btn" onClick={onClose}>
-            <i className="bi bi-x-circle me-2"></i>
-            Close
-          </button>
+    <>
+      <div className="modal-container">
+        <div className="card" data-theme={theme}>
+          <div className="card-body">
+            <button className="close-btn" onClick={onClose}>
+              <i className="bi bi-x-circle me-2"></i>
+              Close
+            </button>
 
-          <div className="game-selection-container">
-            <div className="text-center mb-3">
-              <h2 className="game-selection-title">
-                Choose Your Adventure! 🎮
-              </h2>
-              <p className="game-selection-subtitle">
-                Pick a fun game and start learning!
-              </p>
-            </div>
-
-            {loading ? (
-              <div className="text-center">
-                <div className="spinner-border" role="status"></div>
-                <p>Loading games...</p>
+            <div className="game-selection-container">
+              <div className="text-center mb-3">
+                <h2 className="game-selection-title">
+                  Choose Your Adventure! 🎮
+                </h2>
+                <p className="game-selection-subtitle">
+                  Pick a fun game and start learning!
+                </p>
               </div>
-            ) : error ? (
-              <div className="alert alert-danger" role="alert">
-                {error}
-              </div>
-            ) : (
-              <div className="games-grid">
-                {games.map((game) => (
-                  <div key={game.id || game.title} className="game-card">
-                    <div
-                      className="game-card-content"
-                      onClick={() => handleGameClick(game)}
-                    >
-                      <div className="game-badge">{game.badge}</div>
 
-                      <div className="game-image-container">
-                        <img
-                          src={game.imageUrl}
-                          className="game-image"
-                          alt={game.title}
-                        />
+              {loading ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status"></div>
+                  <p>Loading games...</p>
+                </div>
+              ) : error ? (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              ) : (
+                <div className="games-grid">
+                  {games.map((game) => (
+                    <div key={game.id || game.title} className="game-card">
+                      <div
+                        className="game-card-content"
+                        onClick={() => handleGameClick(game)}
+                      >
+                        <div className="game-badge">{game.badge}</div>
+
+                        <div className="game-image-container">
+                          <img
+                            src={game.imageUrl}
+                            className="game-image"
+                            alt={game.title}
+                          />
+                        </div>
+                        <h3 className="game-title">{game.title}</h3>
+                        <p className="game-description">{game.description}</p>
                       </div>
-                      <h3 className="game-title">{game.title}</h3>
-                      <p className="game-description">{game.description}</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

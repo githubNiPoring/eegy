@@ -8,7 +8,10 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./style.css";
-import GameOver from "../../modal/game-over/gameover"; // Import the GameOver component
+import GameOver from "../../modal/game-over/gameover";
+import Congratulation from "../../modal/congratulations/congratulations";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 import coin from "../../../../public/assets/misc/coin.png";
 // Import sound effects
@@ -33,6 +36,8 @@ const getRandomMissingIndexes = (word) => {
 };
 
 const Alphabet = () => {
+  const navigate = useNavigate();
+
   const { theme } = useTheme();
   const { width, height } = useWindowSize();
   const [questions, setQuestions] = useState([]);
@@ -47,14 +52,20 @@ const Alphabet = () => {
   const [score, setScore] = useState(0);
   const [coins, setCoins] = useState(0);
   const [showGameOver, setShowGameOver] = useState(false);
-  const inputRefs = useRef([]);
+  const [showCongratulation, setShowCongratulation] = useState(false);
+  const [draggedLetter, setDraggedLetter] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [userLevel, setUserLevel] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:5000/api/v1/games/things"
-      );
+      const response = await axios.get(`${BASE_URL}/api/v1/games/things`);
       const data = response.data.questions;
       console.log("Fetched data:", data);
 
@@ -84,6 +95,123 @@ const Alphabet = () => {
     fetchData();
   }, []);
 
+  const fetchUserProfile = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      const response = await axios.get(`${BASE_URL}/api/v1/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data && response.data.profile) {
+        setUserLevel(response.data.profile.userLevel || 1);
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const saveGameResults = async (
+    gameScore,
+    gameCoins,
+    isCompleted = false,
+    updateUserLevel
+  ) => {
+    try {
+      setIsSaving(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return false;
+      }
+
+      // Prepare data according to your API structure
+      const gameData = {
+        gameID: 2,
+        earnedCoin: gameCoins,
+        score: gameScore,
+        lvlReached: updateUserLevel,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/alphabet`,
+        gameData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game results:", error);
+      toast.error("Failed to save game results. Please try again.");
+    }
+  };
+
+  const saveGameProfile = async (userLevel, coins, score) => {
+    try {
+      setIsSavingProfile(true);
+      const token = Cookies.get("token");
+
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
+      const gameProfileData = {
+        userLevel: userLevel,
+        coins: coins,
+        score: score,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/history/user-update`,
+        gameProfileData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        console.log("Game results saved successfully:", response.data.message);
+        return true;
+      } else {
+        console.error("Failed to save game results:", response.data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving game profile:", error);
+      // Log more details about the error
+      if (error.response) {
+        console.error("Response error:", error.response.data);
+      }
+    }
+  };
+
   // This effect updates the game when currentIndex changes
   useEffect(() => {
     if (questions.length > 0 && currentIndex < questions.length) {
@@ -106,6 +234,7 @@ const Alphabet = () => {
     }
   }, [currentWord]);
 
+  // Desktop drag and drop handlers
   const handleDrop = (event, index) => {
     event.preventDefault();
     // Only allow dropping in boxes with dashed outlines (missing indexes)
@@ -129,6 +258,124 @@ const Alphabet = () => {
 
   const handleDragStart = (event, letter) => {
     event.dataTransfer.setData("text", letter);
+    setDraggedLetter(letter);
+    setIsDragging(true);
+
+    // Hide the default drag image
+    const dragImage = new Image();
+    dragImage.src =
+      "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=";
+    event.dataTransfer.setDragImage(dragImage, 0, 0);
+
+    // Update drag position for desktop
+    const updateDragPosition = (e) => {
+      setDragPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    // Initial position
+    setDragPosition({ x: event.clientX, y: event.clientY });
+
+    document.addEventListener("dragover", updateDragPosition);
+
+    // Cleanup on drag end
+    const cleanup = () => {
+      document.removeEventListener("dragover", updateDragPosition);
+      document.removeEventListener("dragend", cleanup);
+    };
+
+    document.addEventListener("dragend", cleanup);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLetter(null);
+    setIsDragging(false);
+  };
+
+  // Mobile touch handlers
+  const handleTouchStart = (event, letter) => {
+    event.preventDefault();
+    setDraggedLetter(letter);
+    setIsDragging(true);
+
+    const touch = event.touches[0];
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+    // Add visual feedback for touch
+    event.currentTarget.style.transform = "scale(1.1)";
+    event.currentTarget.style.zIndex = "1000";
+  };
+
+  const handleTouchMove = (event) => {
+    if (!isDragging || !draggedLetter) return;
+
+    event.preventDefault();
+    const touch = event.touches[0];
+
+    // Update drag position
+    setDragPosition({ x: touch.clientX, y: touch.clientY });
+
+    const elementBelow = document.elementFromPoint(
+      touch.clientX,
+      touch.clientY
+    );
+
+    // Find the letter box element
+    const letterBox = elementBelow?.closest(".letter-box");
+    if (letterBox) {
+      const index = parseInt(letterBox.dataset.index);
+      if (!isNaN(index) && missingIndexes.includes(index)) {
+        // Add visual feedback
+        letterBox.style.backgroundColor = "#e3f2fd";
+        letterBox.style.border = "2px solid #2196f3";
+      }
+    }
+
+    // Remove highlight from other boxes
+    document.querySelectorAll(".letter-box").forEach((box) => {
+      if (box !== letterBox) {
+        box.style.backgroundColor = "";
+        box.style.border = "";
+      }
+    });
+  };
+
+  const handleTouchEnd = (event) => {
+    if (!isDragging || !draggedLetter) return;
+
+    event.preventDefault();
+    const touch = event.changedTouches[0];
+    const elementBelow = document.elementFromPoint(
+      touch.clientX,
+      touch.clientY
+    );
+
+    // Find the letter box element
+    const letterBox = elementBelow?.closest(".letter-box");
+    if (letterBox) {
+      const index = parseInt(letterBox.dataset.index);
+      if (!isNaN(index) && missingIndexes.includes(index)) {
+        let newInput = [...userInput];
+        newInput[index] = draggedLetter;
+        setUserInput(newInput);
+      }
+    }
+
+    // Clean up
+    setDraggedLetter(null);
+    setIsDragging(false);
+    setDragPosition({ x: 0, y: 0 });
+
+    // Remove visual feedback
+    document.querySelectorAll(".letter-box").forEach((box) => {
+      box.style.backgroundColor = "";
+      box.style.border = "";
+    });
+
+    // Reset keyboard key style
+    document.querySelectorAll(".keyboard-key").forEach((key) => {
+      key.style.transform = "";
+      key.style.zIndex = "";
+    });
   };
 
   const resetGame = () => {
@@ -137,11 +384,13 @@ const Alphabet = () => {
     setCoins(0);
     setShowGameOver(false);
     setMessage("");
+    setShowConfetti(false);
     // Reset to first question
     if (questions.length > 0) {
       setCurrentWord(questions[0].word);
       setHint(questions[0].hint);
     }
+    window.location.reload();
   };
 
   const handleGameOverClose = () => {
@@ -149,17 +398,47 @@ const Alphabet = () => {
     setShowGameOver(false);
   };
 
+  const handleCloseModal = () => {
+    setShowCongratulation(false);
+  };
+
   const handleRetry = () => {
     resetGame();
   };
+  const handlePlayAgain = () => {
+    resetGame();
+    setShowCongratulation(false);
+  };
 
-  const checkAnswer = () => {
-    if (userInput.join("") === currentWord) {
+  const checkAnswer = async () => {
+    // Check if all missing letters are filled
+    const hasEmptyFields = missingIndexes.some(
+      (index) => !userInput[index] || userInput[index].trim() === ""
+    );
+
+    if (hasEmptyFields) {
+      toast.warn("Please fill in all the missing letters!");
+      return;
+    }
+
+    const userAnswer = userInput.join("");
+    const correctAnswer = currentWord;
+
+    console.log("User answer:", userAnswer);
+    console.log("Correct answer:", correctAnswer);
+    console.log("Answers match:", userAnswer === correctAnswer);
+
+    if (userAnswer === correctAnswer) {
+      // Correct answer
       playSoundEffect(correctSound);
       toast.success("Fantastic! You did it! 🌟");
       setShowConfetti(true);
-      setScore(score + 10);
-      setCoins(coins + 2);
+
+      const newScore = score + 10;
+      const newCoins = coins + 2;
+
+      setScore(newScore);
+      setCoins(newCoins);
 
       setTimeout(() => {
         setShowConfetti(false);
@@ -167,23 +446,77 @@ const Alphabet = () => {
           // Move to the next question
           setCurrentIndex((prevIndex) => prevIndex + 1);
         } else {
-          playSoundEffect(gameOverSound);
           toast.info("You completed all words! 🏆");
+
+          try {
+            const newLevel = userLevel + 2;
+            const saveSuccess = saveGameResults(
+              newScore,
+              newCoins,
+              true,
+              newLevel
+            );
+            const saveProfileSuccess = saveGameProfile(
+              newLevel,
+              newCoins,
+              newScore
+            );
+
+            if (saveSuccess && saveProfileSuccess) {
+              setShowCongratulation(true);
+            } else {
+              setShowCongratulation(true);
+            }
+          } catch (error) {
+            console.error("Error saving game completion:", error);
+            setShowCongratulation(true);
+          }
         }
       }, 2000);
     } else {
-      // Wrong answer - show game over modal
       playSoundEffect(incorrectSound);
-      playSoundEffect(gameOverSound);
-      setShowGameOver(true);
 
+      // Show toast notification for wrong answer
+      toast.error("Wrong answer! Try again!");
+
+      // Add shake animation
       const container = document.querySelector(".game-container");
-      container.classList.add("shake");
+      if (container) {
+        container.classList.add("shake");
+        setTimeout(() => {
+          container.classList.remove("shake");
+        }, 1000);
+      }
+
+      try {
+        // Save game results (game over - not completed)
+        const saveSuccess = await saveGameResults(score, coins);
+        const saveProfileSuccess = await saveGameProfile(
+          userLevel,
+          coins,
+          score
+        );
+        if (saveSuccess && saveProfileSuccess) {
+          setShowGameOver(true);
+        } else {
+          // Handle save failure
+          console.error("Failed to save game results");
+          setShowGameOver(true); // Still show modal even if save fails
+        }
+      } catch (error) {
+        console.error("Error saving game over:", error);
+        setShowGameOver(true);
+      }
       setTimeout(() => {
-        container.classList.remove("shake");
-      }, 1000);
+        playSoundEffect(gameOverSound);
+      }, 300);
     }
   };
+
+  // Debug log to check showGameOver state
+  useEffect(() => {
+    console.log("showGameOver state changed:", showGameOver);
+  }, [showGameOver]);
 
   if (loading) {
     return <div className="loading">Loading questions...</div>;
@@ -215,7 +548,7 @@ const Alphabet = () => {
         >
           <h1 className="game-title">Alphabet Adventure 🎯</h1>
           <div className="score-display text-center">
-            Question {currentIndex + 1} of {questions.length}
+            Question {Math.min(currentIndex + 1, 10)} of {questions.length}
           </div>
         </motion.div>
 
@@ -250,6 +583,7 @@ const Alphabet = () => {
             <h2 className="hint-text">{hint}</h2>
           </motion.div>
         </div>
+
         <motion.div
           className="word-container mx-0 my-3"
           initial={{ y: 20 }}
@@ -262,6 +596,7 @@ const Alphabet = () => {
               className={`letter-box ${
                 missingIndexes.includes(index) ? "empty" : "filled"
               }`}
+              data-index={index}
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: index * 0.1 }}
@@ -290,8 +625,16 @@ const Alphabet = () => {
                   className="keyboard-key"
                   draggable
                   onDragStart={(e) => handleDragStart(e, letter)}
+                  onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, letter)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
+                  style={{
+                    touchAction: "none", // Prevent default touch behaviors
+                    userSelect: "none", // Prevent text selection
+                  }}
                 >
                   {letter}
                 </motion.div>
@@ -299,6 +642,7 @@ const Alphabet = () => {
             </div>
           ))}
         </motion.div>
+
         <div className="d-flex justify-content-center">
           <motion.button
             className="check-button m-1"
@@ -309,6 +653,7 @@ const Alphabet = () => {
             Check Answer
           </motion.button>
         </div>
+
         <AnimatePresence>
           {message && (
             <motion.div
@@ -323,13 +668,51 @@ const Alphabet = () => {
         </AnimatePresence>
       </div>
 
-      {/* Game Over Modal */}
+      {/* Dragged Letter Visual */}
+      {isDragging && draggedLetter && (
+        <div
+          style={{
+            position: "fixed",
+            left: dragPosition.x - 20,
+            top: dragPosition.y - 20,
+            width: "40px",
+            height: "40px",
+            backgroundColor: theme === "dark" ? "#9f265c" : "#c34286",
+            color: theme === "dark" ? "#ffffff" : "#333333",
+            border: `2px solid ${theme === "dark" ? "#9f265c" : "#9f265c"}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "8px",
+            fontSize: "18px",
+            fontWeight: "bold",
+            pointerEvents: "none",
+            zIndex: 9999,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            transform: "scale(1.1)",
+            transition: "none",
+          }}
+        >
+          {draggedLetter}
+        </div>
+      )}
+
+      {/* Game Over Modal - Debug info */}
+      {console.log("Rendering GameOver modal:", showGameOver)}
       <AnimatePresence>
         {showGameOver && (
           <GameOver
             onClose={handleGameOverClose}
             onRetry={handleRetry}
             score={score / 10}
+            coins={coins}
+          />
+        )}
+        {showCongratulation && (
+          <Congratulation
+            onClose={handleCloseModal}
+            onPlayAgain={handlePlayAgain}
+            score={score}
             coins={coins}
           />
         )}

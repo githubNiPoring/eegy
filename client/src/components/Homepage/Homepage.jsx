@@ -20,6 +20,8 @@ import shop from "../../../public/assets/misc/shop.png";
 import achievements from "../../../public/assets/misc/achievements.png";
 import settings from "../../../public/assets/misc/settings.png";
 
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
 const Homepage = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState("");
@@ -48,20 +50,17 @@ const Homepage = () => {
           return;
         }
 
-        const response = await axios.get("http://localhost:5000/api/v1/eegy", {
+        const response = await axios.get(`${BASE_URL}/api/v1/eegy`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const profile = await axios.get(
-          "http://localhost:5000/api/v1/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const profile = await axios.get(`${BASE_URL}/api/v1/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         setCoins(profile.data.profile.coins);
         setLevel(profile.data.profile.userLevel);
@@ -89,7 +88,7 @@ const Homepage = () => {
       const token = Cookies.get("token");
 
       const activeCharacterRes = await axios.get(
-        "http://localhost:5000/api/v1/characters/active",
+        `${BASE_URL}/api/v1/characters/active`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -122,7 +121,7 @@ const Homepage = () => {
     try {
       const charId = activeCharId;
       const activeChar = await axios.get(
-        `http://localhost:5000/api/v1/characters/${charId}`
+        `${BASE_URL}/api/v1/characters/${charId}`
       );
       setActiveCharImg(activeChar.data.character.charImg);
     } catch (error) {
@@ -142,7 +141,6 @@ const Homepage = () => {
 
   const handlePlayButtonClick = (e) => {
     e.preventDefault();
-    console.log(`${e} Play button clicked`);
     setShowPlayGame(true);
   };
 
