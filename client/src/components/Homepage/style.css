@@ -148,6 +148,12 @@ body {
   transition: filter 0.3s ease;
 }
 
+.achievement-icon-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+}
+
 @keyframes float {
   0%,
   100% {

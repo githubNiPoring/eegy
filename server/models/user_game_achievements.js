@@ -22,8 +22,14 @@ const UserGameAchievement = sequelize.define(
     },
     dateObtained: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
       field: "dateObtained",
+    },
+    claimStatus: {
+      type: DataTypes.ENUM("True", "False"),
+      allowNull: false,
+      defaultValue: "False",
+      field: "claimStatus",
     },
   },
   {

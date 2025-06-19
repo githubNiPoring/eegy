@@ -25,10 +25,16 @@ const GameAchievement = sequelize.define(
       allowNull: false,
       field: "iconUrl",
     },
-    category: {
-      type: DataTypes.STRING,
+    lvlRequirement: {
+      type: DataTypes.INTEGER,
       allowNull: false,
-      field: "category",
+      defaultValue: 1,
+      field: "lvlRequirement",
+    },
+    coinReward: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "coinReward",
     },
   },
   {

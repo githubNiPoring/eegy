@@ -33,10 +33,6 @@ const GameCharacter = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false, // Image can be null if not set
     },
-    unlockRequirements: {
-      type: DataTypes.STRING,
-      allowNull: false, // Unlock requirement can be null if not set
-    },
   },
   {
     tableName: "game_character", // Explicitly specify the table name

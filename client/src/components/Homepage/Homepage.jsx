@@ -32,6 +32,7 @@ const Homepage = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
   const [profileOpenSource, setProfileOpenSource] = useState("info");
+  const [claimableCount, setClaimableCount] = useState(0);
 
   //user profile
   const [avatar, setAvatar] = useState("");
@@ -39,6 +40,27 @@ const Homepage = () => {
   const [level, setLevel] = useState(0);
   const [activeCharId, setActiveCharId] = useState(null);
   const [activeCharImg, setActiveCharImg] = useState(null);
+
+  const fetchClaimableAchievements = async () => {
+    try {
+      const token = Cookies.get("token");
+      const response = await axios.get(`${BASE_URL}/api/v1/achievements/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Count achievements with claimStatus === "False"
+      const claimable = response.data.achievements.filter(
+        (a) => a.claimStatus === "False"
+      ).length;
+      setClaimableCount(claimable);
+    } catch (error) {
+      console.error("Error fetching claimable achievements:", error);
+    }
+  };
+  useEffect(() => {
+    fetchClaimableAchievements();
+  }, []);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -180,6 +202,27 @@ const Homepage = () => {
   const handleCloseProfile = () => {
     setShowProfile(false);
   };
+
+  const grantAchievements = async () => {
+    try {
+      const token = Cookies.get("token");
+      const response = await axios.post(
+        `${BASE_URL}/api/v1/achievements/check`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("Achievements granted:", response.data);
+    } catch (error) {
+      console.error("Error granting achievements:", error);
+    }
+  };
+  useEffect(() => {
+    grantAchievements();
+  }, []);
+
   return (
     <>
       <div className="background">
@@ -332,7 +375,7 @@ const Homepage = () => {
               transition={{ duration: 0.2 }}
               whileTap={{ scale: 0.9 }}
               onClick={handlePlayButtonClick}
-              className="play-btn"
+              className="play-btn mb-4"
             >
               <span className="me-2">🎮</span>
               Let's Play!
@@ -358,15 +401,36 @@ const Homepage = () => {
           <p className="mb-2">Shop 🛍️</p>
         </div>
         <div className="d-flex flex-column align-items-center mx-2">
-          <motion.img
-            whileHover={{ scale: 1.1, rotate: -5 }}
-            transition={{ duration: 0.2 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleAchievements}
-            src={achievements}
-            className="size"
-            alt="achievements"
-          />
+          <div className="achievement-icon-wrapper">
+            <motion.img
+              whileHover={{ scale: 1.1, rotate: -5 }}
+              transition={{ duration: 0.2 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleAchievements}
+              src={achievements}
+              className="size"
+              alt="achievements"
+            />
+            {claimableCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "-8px",
+                  right: "-8px",
+                  background: "#ff5252",
+                  color: "#fff",
+                  borderRadius: "50%",
+                  padding: "2px 8px",
+                  fontSize: "0.9rem",
+                  fontWeight: "bold",
+                  zIndex: 2,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                }}
+              >
+                {claimableCount}
+              </span>
+            )}
+          </div>
           <p className="mb-2">Achievements 🏆</p>
         </div>
         <div className="d-flex flex-column align-items-center mx-2">

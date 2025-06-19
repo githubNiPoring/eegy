@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 
 const { User, validate } = require("../models/user");
 const UserProfile = require("../models/user_profile");
+const UserAchievements = require("../models/user_game_achievements");
 const UserBoughtCharacters = require("../models/user_bought_characters");
 const Token = require("../models/token");
 const sendEmail = require("../utils/send.mail");
@@ -120,6 +121,13 @@ const Signup = async (req, res) => {
       verified: false,
     });
 
+    //Create user achievements
+    const userAchievements = await UserAchievements.create({
+      profileID: user.id,
+      achievementID: 1,
+      claimStatus: "False",
+    });
+
     //Create a free character for the user
     const freeCharacter = await UserBoughtCharacters.create({
       userID: user.id,
@@ -134,7 +142,7 @@ const Signup = async (req, res) => {
       profileID: user.id,
       avatar: "../../../public/assets/avatar/player.jpg",
       userLevel: 1,
-      coins: 50,
+      coins: 0,
       score: 0,
       cumulativeScore: 0,
     });
