@@ -13,11 +13,12 @@ const gameHistoryRoutes = require("../routes/history");
 
 const app = express();
 const port = process.env.PORT || 5000;
+const baseURL = process.env.BASE_URL;
 
 // Configure CORS with more specific options
 app.use(
   cors({
-    origin: "http://192.168.1.9:5173", // Your React app's URL
+    origin: `${baseURL}5173`, // Your React app's URL
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],

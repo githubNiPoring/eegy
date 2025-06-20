@@ -21,39 +21,67 @@ export const AudioProvider = ({ children }) => {
     shouldAutoplay
   );
 
-  // Update localStorage when preference changes
   useEffect(() => {
     localStorage.setItem("backgroundMusicEnabled", shouldAutoplay);
-    if (shouldAutoplay) {
+    if (!shouldAutoplay) pause();
+  }, [shouldAutoplay, pause]);
+  // Update localStorage when preference changes
+  // useEffect(() => {
+  //   localStorage.setItem("backgroundMusicEnabled", shouldAutoplay);
+  //   if (shouldAutoplay) {
+  //     play();
+  //   } else {
+  //     pause();
+  //   }
+  // }, [shouldAutoplay, play, pause]);
+
+  useEffect(() => {
+    if (!shouldAutoplay) return;
+    const resumeMusic = () => {
       play();
-    } else {
-      pause();
-    }
-  }, [shouldAutoplay, play, pause]);
+      window.removeEventListener("pointerdown", resumeMusic);
+      window.removeEventListener("keydown", resumeMusic);
+    };
+    window.addEventListener("pointerdown", resumeMusic);
+    window.addEventListener("keydown", resumeMusic);
+    return () => {
+      window.removeEventListener("pointerdown", resumeMusic);
+      window.removeEventListener("keydown", resumeMusic);
+    };
+  }, [shouldAutoplay, play]);
 
-  const startMusic = () => {
-    if (shouldAutoplay) {
-      play();
-    }
-  };
+  const toggleMusicPreference = () => setShouldAutoplay((prev) => !prev);
+  // const startMusic = () => {
+  //   if (shouldAutoplay) {
+  //     play();
+  //   }
+  // };
 
-  const stopMusic = () => {
-    pause();
-  };
+  // const stopMusic = () => {
+  //   pause();
+  // };
 
-  const toggleMusicPreference = () => {
-    setShouldAutoplay(!shouldAutoplay);
-  };
+  // const toggleMusicPreference = () => {
+  //   setShouldAutoplay(!shouldAutoplay);
+  // };
+
+  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(() => {
+    const saved = localStorage.getItem("soundEffectsEnabled");
+    return saved === null ? true : saved === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("soundEffectsEnabled", soundEffectsEnabled);
+  }, [soundEffectsEnabled]);
 
   return (
     <AudioContext.Provider
       value={{
         playing,
-        toggle,
-        startMusic,
-        stopMusic,
         isMusicEnabled: shouldAutoplay,
         toggleMusicPreference,
+        soundEffectsEnabled,
+        setSoundEffectsEnabled,
       }}
     >
       {children}

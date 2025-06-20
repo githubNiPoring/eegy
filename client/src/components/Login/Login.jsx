@@ -38,7 +38,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/login", formData);
+      const response = await api.post("login", formData);
 
       if (response.data && response.data.success) {
         // Store token in cookie
@@ -46,9 +46,6 @@ const Login = () => {
         if (token) {
           Cookies.set("token", token);
         }
-
-        // Start background music
-        startMusic();
 
         // Navigate to home
         navigate("/homepage");

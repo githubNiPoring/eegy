@@ -53,6 +53,11 @@ export const useAudio = (audioSrc, autoplay = false) => {
 };
 
 export const playSoundEffect = (audioSrc) => {
+  // Check if sound effects are enabled
+  const { soundEffectsEnabled } = useAudioContext?.() || {
+    soundEffectsEnabled: true,
+  };
+  if (!soundEffectsEnabled) return;
   const audio = new Audio(audioSrc);
   audio.play();
 };

@@ -94,6 +94,23 @@ const Signup = async (req, res) => {
     const birthdateString = req.body.birthdate;
     const birthdate = new Date(birthdateString);
 
+    // --- Age validation start ---
+    const today = new Date();
+    const minAge = 3;
+    const maxAge = 6;
+    const age = today.getFullYear() - birthdate.getFullYear();
+    const m = today.getMonth() - birthdate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthdate.getDate())) {
+      // Not yet had birthday this year
+      age--;
+    }
+    if (age < minAge || age > maxAge) {
+      return res.status(400).json({
+        message: `Only children aged ${minAge}-${maxAge} years old can sign up.`,
+        success: false,
+      });
+    }
+
     // Check if user already exists
     let existingUser = await User.findOne({
       where: {

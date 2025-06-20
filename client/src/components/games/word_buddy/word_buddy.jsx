@@ -8,6 +8,7 @@ import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { usePlaySoundEffect } from "../../../hooks/playSoundEffect";
 
 import coin from "../../../../public/assets/misc/coin.png";
 import correctSound from "../../../../public/assets/audio/correct.mp3";
@@ -37,10 +38,13 @@ const Wordbuddy = () => {
   const [newUserLevel, setNewUserLevel] = useState();
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isOptionDisabled, setIsOptionDisabled] = useState(false);
 
   // Decorative emojis for the background
   const decorations = ["🍎", "🍌", "🍓", "🍊", "🥝", "🍉", "🍇"];
   const [randomEmojis, setRandomEmojis] = useState([]);
+
+  const playSoundEffect = usePlaySoundEffect();
 
   useEffect(() => {
     // Set random emojis for decoration
@@ -280,6 +284,7 @@ const Wordbuddy = () => {
     if (!currentWord) return;
 
     if (selectedWord === currentWord) {
+      setIsOptionDisabled(true);
       playSoundEffect(correctSound);
       setShowConfetti(true);
       setMessage("Correct! 🎉");
@@ -299,7 +304,9 @@ const Wordbuddy = () => {
         } else {
           setMessage("Congratulations! You completed all questions! 🏆");
 
-          const newUserLevel = userLevel + 1;
+          const MAX_LEVEL = 100;
+          const newUserLevel =
+            userLevel < MAX_LEVEL ? userLevel + 1 : MAX_LEVEL;
 
           setNewUserLevel(newUserLevel);
           // Save game results before showing congratulations modal
@@ -323,6 +330,7 @@ const Wordbuddy = () => {
             setShowCongratulation(true); // Still show modal even if save fails
           }
         }
+        setIsOptionDisabled(false);
       }, 2000);
     } else {
       playSoundEffect(incorrectSound);
@@ -486,7 +494,7 @@ const Wordbuddy = () => {
                     key={index}
                     className="option-button"
                     onClick={() => handleAnswer(option)}
-                    disabled={isSaving && isSavingProfile}
+                    disabled={isOptionDisabled || isSaving || isSavingProfile}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
@@ -529,7 +537,6 @@ const Wordbuddy = () => {
             onPlayAgain={handlePlayAgain}
             score={score}
             coins={coins}
-            userLevel={userLevel + 1}
           />
         )}
       </AnimatePresence>

@@ -150,6 +150,8 @@ const GameShop = ({ onClose }) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+
+    window.location.reload();
   };
 
   const closeShop = () => {

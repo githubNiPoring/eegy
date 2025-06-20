@@ -1,15 +1,19 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { motion } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
+import { useState, useRef, useEffect } from "react";
+import { useAudio } from "../../../hooks/useAudio";
+import { useAudioContext } from "../../../context/AudioContext";
 import "./style.css";
 
 const GameSettings = ({ onClose }) => {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [musicEnabled, setMusicEnabled] = useState(true);
+  // const [soundEnabled, setSoundEnabled] = useState(true);
+  const { isMusicEnabled, toggleMusicPreference } = useAudioContext();
+  const { soundEffectsEnabled, setSoundEffectsEnabled } = useAudioContext();
 
   const handleLogout = () => {
     Cookies.remove("token");
@@ -50,6 +54,13 @@ const GameSettings = ({ onClose }) => {
           </div>
         </div>
 
+        {/* <audio
+          ref={bgMusicRef}
+          src="/audio/background-music.mp3" // <-- put your music file path here
+          loop
+          preload="auto"
+          style={{ display: "none" }}
+        /> */}
         <div className="settings-content">
           {/* Sound Settings */}
           <motion.div
@@ -62,17 +73,21 @@ const GameSettings = ({ onClose }) => {
             <div className="d-flex align-items-center justify-content-between mb-3">
               <button
                 className="settings-btn btn-sound"
-                onClick={() => setSoundEnabled(!soundEnabled)}
+                // onClick={() => setSoundEnabled(!soundEnabled)}
               >
                 <i
-                  className={`bi bi-volume-${soundEnabled ? "up" : "mute"}`}
+                  className={`bi bi-volume-${
+                    soundEffectsEnabled ? "up" : "mute"
+                  }`}
                 ></i>
                 Sound Effects
                 <label className="toggle-switch">
                   <input
                     type="checkbox"
-                    checked={soundEnabled}
-                    onChange={() => setSoundEnabled(!soundEnabled)}
+                    checked={soundEffectsEnabled}
+                    onChange={() =>
+                      setSoundEffectsEnabled(!soundEffectsEnabled)
+                    }
                   />
                   <span className="toggle-slider"></span>
                 </label>
@@ -81,49 +96,25 @@ const GameSettings = ({ onClose }) => {
             <div className="d-flex align-items-center justify-content-between">
               <button
                 className="settings-btn btn-music"
-                onClick={() => setMusicEnabled(!musicEnabled)}
+                // onClick={() => setMusicEnabled(!musicEnabled)}
               >
                 <i
                   className={`bi bi-music-note-${
-                    musicEnabled ? "beamed" : "x"
+                    isMusicEnabled ? "beamed" : "x"
                   }`}
                 ></i>
                 Background Music
                 <label className="toggle-switch">
                   <input
                     type="checkbox"
-                    checked={musicEnabled}
-                    onChange={() => setMusicEnabled(!musicEnabled)}
+                    checked={isMusicEnabled}
+                    onChange={toggleMusicPreference}
                   />
                   <span className="toggle-slider"></span>
                 </label>
               </button>
             </div>
           </motion.div>
-
-          {/* Theme Settings
-          <motion.div
-            className="settings-section"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h3>Theme Settings 🎨</h3>
-            <button className="settings-btn btn-theme" onClick={toggleTheme}>
-              <i
-                className={`bi bi-${theme === "light" ? "sun" : "moon-stars"}`}
-              ></i>
-              {theme === "light" ? "Light Theme" : "Dark Theme"}
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={theme === "dark"}
-                  onChange={toggleTheme}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </button>
-          </motion.div> */}
 
           {/* Account Settings */}
           <motion.div

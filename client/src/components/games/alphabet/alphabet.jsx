@@ -12,6 +12,7 @@ import GameOver from "../../modal/game-over/gameover";
 import Congratulation from "../../modal/congratulations/congratulations";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import { usePlaySoundEffect } from "../../../hooks/playSoundEffect";
 
 import coin from "../../../../public/assets/misc/coin.png";
 // Import sound effects
@@ -59,8 +60,11 @@ const Alphabet = () => {
   const [userLevel, setUserLevel] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isCheckDisabled, setIsCheckDisabled] = useState(false);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+  const playSoundEffect = usePlaySoundEffect();
 
   const fetchData = async () => {
     try {
@@ -411,6 +415,7 @@ const Alphabet = () => {
   };
 
   const checkAnswer = async () => {
+    setIsCheckDisabled(true);
     // Check if all missing letters are filled
     const hasEmptyFields = missingIndexes.some(
       (index) => !userInput[index] || userInput[index].trim() === ""
@@ -445,11 +450,22 @@ const Alphabet = () => {
         if (currentIndex < questions.length - 1) {
           // Move to the next question
           setCurrentIndex((prevIndex) => prevIndex + 1);
+          setIsCheckDisabled(false);
         } else {
           toast.info("You completed all words! 🏆");
 
           try {
-            const newLevel = userLevel + 2;
+            const MAX_LEVEL = 100;
+            let levelToAdd = 2;
+            if (userLevel + levelToAdd > MAX_LEVEL) {
+              levelToAdd = MAX_LEVEL - userLevel;
+              if (levelToAdd < 0) levelToAdd = 0;
+            }
+            const newLevel =
+              userLevel + levelToAdd > MAX_LEVEL
+                ? MAX_LEVEL
+                : userLevel + levelToAdd;
+
             const saveSuccess = saveGameResults(
               newScore,
               newCoins,
@@ -490,7 +506,12 @@ const Alphabet = () => {
 
       try {
         // Save game results (game over - not completed)
-        const saveSuccess = await saveGameResults(score, coins, true, userLevel);
+        const saveSuccess = await saveGameResults(
+          score,
+          coins,
+          true,
+          userLevel
+        );
         const saveProfileSuccess = await saveGameProfile(
           userLevel,
           coins,
@@ -649,6 +670,7 @@ const Alphabet = () => {
             onClick={checkAnswer}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            disabled={isCheckDisabled}
           >
             Check Answer
           </motion.button>

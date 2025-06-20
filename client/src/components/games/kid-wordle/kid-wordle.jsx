@@ -7,6 +7,7 @@ import Congratulation from "../../modal/congratulations/congratulations";
 import axios from "axios";
 import Cookies from "js-cookie";
 import "./style.css";
+import { usePlaySoundEffect } from "../../../hooks/playSoundEffect";
 
 // Import sound effects
 import correctSound from "../../../../public/assets/audio/correct.mp3";
@@ -51,6 +52,7 @@ const KidWordle = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  const playSoundEffect = usePlaySoundEffect();
   // Fetch data function
   const fetchData = async () => {
     try {
@@ -316,7 +318,9 @@ const KidWordle = () => {
         }, 1500);
       } else {
         try {
-          const newUserLevel = userLevel + 3;
+          const MAX_LEVEL = 100;
+          const levelToAdd = Math.min(3, MAX_LEVEL - userLevel);
+          const newUserLevel = userLevel + levelToAdd;
           const finalScore = score + 1;
           const finalCoins = coins + 3;
 
@@ -655,7 +659,7 @@ const KidWordle = () => {
           <Congratulation
             onClose={handleCloseModal}
             onPlayAgain={handlePlayAgain}
-            score={score}
+            score={score * 10}
             coins={coins}
           />
         )}
