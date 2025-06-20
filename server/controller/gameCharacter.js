@@ -21,6 +21,15 @@ const CharById = async (req, res) => {
   try {
     const charId = req.params.charId;
     const character = await GameCharacter.findByPk(charId);
+
+    // Add this check
+    if (!character) {
+      return res.status(404).json({
+        success: false,
+        message: "Character not found",
+      });
+    }
+
     res.status(200).json({ success: true, character });
   } catch (error) {
     res.status(500).json({

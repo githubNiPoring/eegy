@@ -158,9 +158,33 @@ const checkAndGrantAchievements = async (req, res) => {
   }
 };
 
+const gameAchievementCount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const countAchievements = await UserGameAchievement.count({
+      where: {
+        profileID: userId,
+        claimStatus: "True",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      count: countAchievements,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error counting achievements",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllAchievements,
   getUserAchieved,
   claimAchievement,
   checkAndGrantAchievements,
+  gameAchievementCount,
 };

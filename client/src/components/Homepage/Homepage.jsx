@@ -398,7 +398,7 @@ const Homepage = () => {
             className="size"
             alt="shop"
           />
-          <p className="mb-2">Shop 🛍️</p>
+          <p className="mb-2">Shop</p>
         </div>
         <div className="d-flex flex-column align-items-center mx-2">
           <div className="achievement-icon-wrapper">
@@ -431,7 +431,7 @@ const Homepage = () => {
               </span>
             )}
           </div>
-          <p className="mb-2">Achievements 🏆</p>
+          <p className="mb-2">Achievements</p>
         </div>
         <div className="d-flex flex-column align-items-center mx-2">
           <motion.img
@@ -443,7 +443,7 @@ const Homepage = () => {
             className="size"
             alt="settings"
           />
-          <p className="mb-2">Settings ⚙️</p>
+          <p className="mb-2">Settings</p>
         </div>
       </motion.div>
       <AnimatePresence>

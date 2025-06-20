@@ -18,6 +18,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [totalCoins, setTotalCoins] = useState(0);
   const [accumulatedScore, setAccumulatedScore] = useState(0);
+  const [countAchievements, setCountAchievements] = useState(0);
 
   const avatarOptions = [
     "../../../../public/assets/avatar/player.jpg",
@@ -28,6 +29,26 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
     "../../../../public/assets/avatar/owl.png",
     "../../../../public/assets/avatar/rhino.png",
   ];
+
+  const fetchCountAchievements = async () => {
+    try {
+      const token = Cookies.get("token");
+      const response = await axios.get(
+        `${BASE_URL}/api/v1/achievements/count`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setCountAchievements(response.data.count);
+    } catch (error) {
+      console.error("Error fetching achievements count:", error);
+    }
+  };
+  useEffect(() => {
+    fetchCountAchievements();
+  }, []);
 
   const fetchHistory = async () => {
     try {
@@ -278,7 +299,7 @@ const GameProfile = ({ onClose, initialTab, username = "Cool Player" }) => {
               transition={{ delay: 0.3 }}
             >
               <h3 className="stat-label">Achievements</h3>
-              <div className="stat-value">23/50 🏆</div>
+              <div className="stat-value">{countAchievements}/15 🏆</div>
             </motion.div>
           </div>
 

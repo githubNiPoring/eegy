@@ -150,6 +150,9 @@ const GameShop = ({ onClose }) => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+  };
+
+  const closeShop = () => {
     window.location.reload();
   };
 
@@ -178,7 +181,7 @@ const GameShop = ({ onClose }) => {
             </motion.h2>
             <motion.button
               className="shop-close-btn"
-              onClick={onClose}
+              onClick={closeShop}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
