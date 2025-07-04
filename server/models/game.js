@@ -44,7 +44,7 @@ const Game = sequelize.define(
     },
   },
   {
-    timestamps: true,
+    timestamps: false,
   }
 );
 

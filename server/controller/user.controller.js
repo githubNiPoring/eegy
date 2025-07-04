@@ -135,7 +135,7 @@ const Signup = async (req, res) => {
       ...req.body,
       birthdate,
       password: encryptedPassword,
-      verified: false,
+      verified: 0,
     });
 
     //Create user achievements

@@ -9,6 +9,7 @@ import Signup from "./components/Signup/Signup";
 import Login from "./components/Login/Login";
 import Homepage from "./components/Homepage/Homepage";
 import EmailVerification from "./components/Verification/EmailVerification";
+import PublicRoute from "./components/PublicRoute";
 
 // games
 import WordBuddy from "./components/games/word_buddy/word_buddy";
@@ -57,8 +58,22 @@ function App() {
         <AudioControls />
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            }
+          />
           <Route path="/home" element={<Navigate to="/homepage" />} />
           <Route path="/homepage" element={<Homepage />} />
           <Route

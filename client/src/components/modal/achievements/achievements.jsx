@@ -196,7 +196,7 @@ const GameAchievements = ({ onClose }) => {
                                 <motion.img
                                   src={achievement.iconUrl}
                                   className="achievement-image mt-5"
-                                  alt={achievement.name}
+                                  alt={achievement.title}
                                   animate={
                                     !achievement.locked
                                       ? {
@@ -213,7 +213,7 @@ const GameAchievements = ({ onClose }) => {
                                 />
                                 <div className="achievement-details">
                                   <h4 className="achievement-name">
-                                    {achievement.name}
+                                    {achievement.title}
                                   </h4>
                                   <p className="achievement-description">
                                     {achievement.description}

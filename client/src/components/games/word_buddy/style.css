@@ -90,7 +90,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 1rem;
   overflow: hidden;
 }
@@ -101,15 +101,21 @@
   padding: 0.5rem;
   text-align: center;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  flex: 1;
+  /* flex: 1; */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
   margin-bottom: 1rem;
-  overflow: hidden;
+  overflow: auto;
+  max-height: 300px;
   border: 4px dashed #ff95c8;
+}
+
+.character-img {
+  width: 200px;
+  margin: 10px 0 0 0;
 }
 
 .word-image {
@@ -142,7 +148,7 @@
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 1rem;
-  margin-top: auto;
+  /* margin-top: auto; */
   height: auto;
 }
 
@@ -242,7 +248,7 @@
 }
 
 /* Responsive Design */
-@media (max-height: 700px) {
+@media (max-height: 768px) {
   .game-container {
     height: 95vh;
   }
@@ -265,6 +271,10 @@
     font-size: 1.1rem;
     padding: 0.8rem;
   }
+
+  .word-card {
+    max-height: fit-content;
+  }
 }
 
 @media (max-width: 500px) {
@@ -281,6 +291,7 @@
 
   .game-header {
     padding: 0.5rem;
+    margin: 0 !important;
   }
 
   .game-title {
@@ -306,5 +317,20 @@
     font-size: 1rem;
     padding: 0.5rem;
     min-height: 50px;
+  }
+}
+
+@keyframes praise-pop {
+  0% {
+    transform: translate(-50%, 20px) scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-50%, -10px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -20px) scale(1);
+    opacity: 1;
   }
 }

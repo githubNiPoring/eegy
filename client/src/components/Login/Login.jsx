@@ -168,7 +168,16 @@ const Login = () => {
                       </button>
                     </div>
                   </div>
-
+                  {/* <div className="text-end mb-2">
+                    <button
+                      type="button"
+                      className="btn btn-link p-0 text-warning"
+                      style={{ fontSize: "0.95rem" }}
+                      disabled={isLoading}
+                    >
+                      Forgot password?
+                    </button>
+                  </div> */}
                   <button
                     type="submit"
                     className="btn btn-warning w-100 py-3 mb-3 rounded-pill shadow-sm"

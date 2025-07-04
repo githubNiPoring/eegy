@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
+import { useLocation } from "react-router-dom";
 import { playSoundEffect } from "../../../hooks/useAudio";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
@@ -19,6 +20,7 @@ import coin from "../../../../public/assets/misc/coin.png";
 import correctSound from "../../../../public/assets/audio/correct.mp3";
 import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
 import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
+import CloseGameModal from "../../modal/close/close";
 
 const KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -61,15 +63,131 @@ const Alphabet = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isCheckDisabled, setIsCheckDisabled] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const category = params.get("category") || "things"; // default to animals
+  const [activeCharId, setActiveCharId] = useState(null);
+  const [activeCharImg, setActiveCharImg] = useState(null);
+
+  const praiseMessages = [
+    "Great job!",
+    "Awesome!",
+    "You got it!",
+    "Well done!",
+    "Fantastic!",
+    "Keep it up!",
+    "Super!",
+    "Nice work!",
+  ];
+  const [showPraise, setShowPraise] = useState(false);
+  const [praiseText, setPraiseText] = useState("");
+  const encouragementMessages = [
+    "You can do it!",
+    "Take your time!",
+    "Give it a try!",
+    "Trust your instincts!",
+    "Keep going!",
+    "Don't give up!",
+    "You're doing great!",
+    "Stay focused!",
+  ];
+  const [idleEncouragement, setIdleEncouragement] = useState("");
+  const [idleTimer, setIdleTimer] = useState(null);
 
   const BASE_URL = import.meta.env.VITE_BASE_URL;
 
   const playSoundEffect = usePlaySoundEffect();
 
+  const activeCharacter = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      const activeCharacterRes = await axios.get(
+        `${BASE_URL}/api/v1/characters/active`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (
+        activeCharacterRes.data.character &&
+        activeCharacterRes.data.character.charID
+      ) {
+        const id = activeCharacterRes.data.character.charID;
+        setActiveCharId(id);
+      } else {
+        console.log("No active character found or unexpected response format");
+        console.log(
+          "Response data structure:",
+          JSON.stringify(activeCharacterRes.data)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+  useEffect(() => {
+    activeCharacter();
+  }, []);
+
+  const getActiveCharacter = async () => {
+    try {
+      const charId = activeCharId;
+      const activeChar = await axios.get(
+        `${BASE_URL}/api/v1/characters/${charId}`
+      );
+      console.log("Active character data:", activeChar.data);
+      setActiveCharImg(activeChar.data.character.charImg);
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+  useEffect(() => {
+    if (activeCharId !== null) {
+      getActiveCharacter();
+    }
+  }, [activeCharId]);
+
+  useEffect(() => {
+    // Clear any previous timer/interval
+    if (idleTimer) clearInterval(idleTimer);
+
+    // Only show encouragement if not disabled, not loading, not showing praise, and not saving
+    if (!loading && !showPraise && !isSaving && !isSavingProfile) {
+      // Show a message immediately if none is showing
+      if (!idleEncouragement) {
+        const randomEnc =
+          encouragementMessages[
+            Math.floor(Math.random() * encouragementMessages.length)
+          ];
+        setIdleEncouragement(randomEnc);
+      }
+      // Change encouragement every 5 seconds
+      const interval = setInterval(() => {
+        const randomEnc =
+          encouragementMessages[
+            Math.floor(Math.random() * encouragementMessages.length)
+          ];
+        setIdleEncouragement(randomEnc);
+      }, 5000);
+
+      setIdleTimer(interval);
+    }
+
+    // Cleanup
+    return () => {
+      if (idleTimer) clearInterval(idleTimer);
+    };
+    // eslint-disable-next-line
+  }, [loading, showPraise, isSaving, isSavingProfile]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/api/v1/games/things`);
+      const response = await axios.get(`${BASE_URL}/api/v1/games/${category}`);
       const data = response.data.questions;
       console.log("Fetched data:", data);
 
@@ -437,6 +555,14 @@ const Alphabet = () => {
       // Correct answer
       playSoundEffect(correctSound);
       toast.success("Fantastic! You did it! 🌟");
+
+      // Show praise bubble
+      const randomPraise =
+        praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
+      setPraiseText(randomPraise);
+      setShowPraise(true);
+      setTimeout(() => setShowPraise(false), 3000);
+
       setShowConfetti(true);
 
       const newScore = score + 10;
@@ -552,207 +678,324 @@ const Alphabet = () => {
   }
 
   return (
-    <motion.div
-      className={`game-wrapper ${theme}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {showConfetti && <Confetti width={width} height={height} />}
+    <>
+      <motion.div
+        className={`game-wrapper ${theme}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {showConfetti && <Confetti width={width} height={height} />}
 
-      <div className="game-container p-4">
-        <motion.div
-          className="game-header m-0"
-          initial={{ y: -20 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.5, type: "spring" }}
-        >
-          <h1 className="game-title">Alphabet Adventure 🎯</h1>
-          <div className="score-display text-center">
-            Question {Math.min(currentIndex + 1, 10)} of {questions.length}
-          </div>
-        </motion.div>
+        <div className="game-container">
+          <motion.div
+            className="game-header m-0"
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.5, type: "spring" }}
+          >
+            <h1 className="game-title">Alphabet Adventure 🎯</h1>
+            <div className="score-display text-center">
+              Question {Math.min(currentIndex + 1, 10)} of {questions.length}
+            </div>
+          </motion.div>
 
-        <motion.div
-          className="coin-display"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <img src={coin} alt="Coin" className="coin-icon" />
-          <span className="coin-count">{coins}</span>
-        </motion.div>
+          <motion.div
+            className="coin-display"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <img src={coin} alt="Coin" className="coin-icon" />
+            <span className="coin-count">{coins}</span>
+          </motion.div>
 
-        <div className="d-flex justify-content-center align-items-center">
-          {questions[currentIndex] && questions[currentIndex].imageURL && (
-            <motion.img
+          <div className="d-flex justify-content-center align-items-center">
+            {questions[currentIndex] && questions[currentIndex].imageURL && (
+              <motion.img
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.5 }}
+                src={questions[currentIndex].imageURL}
+                alt={questions[currentIndex].word}
+                className="question-image p-0"
+              />
+            )}
+
+            <motion.div
+              className="hint-container m-3 w-100"
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.5 }}
-              src={questions[currentIndex].imageURL}
-              alt={questions[currentIndex].word}
-              className="question-image p-0"
-            />
-          )}
+            >
+              <h2 className="hint-text">{hint}</h2>
+            </motion.div>
+          </div>
 
           <motion.div
-            className="hint-container m-3 w-100"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
+            className="word-container mx-0 my-3"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="hint-text">{hint}</h2>
+            {userInput.map((char, index) => (
+              <motion.div
+                key={index}
+                className={`letter-box ${
+                  missingIndexes.includes(index) ? "empty" : "filled"
+                }`}
+                data-index={index}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                style={{
+                  cursor: missingIndexes.includes(index)
+                    ? "pointer"
+                    : "default",
+                }}
+              >
+                {char}
+              </motion.div>
+            ))}
           </motion.div>
-        </div>
 
-        <motion.div
-          className="word-container mx-0 my-3"
-          initial={{ y: 20 }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {userInput.map((char, index) => (
-            <motion.div
-              key={index}
-              className={`letter-box ${
-                missingIndexes.includes(index) ? "empty" : "filled"
-              }`}
-              data-index={index}
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e, index)}
+          <motion.div
+            className="keyboard-container m-0"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {KEYBOARD_ROWS.map((row, rowIndex) => (
+              <div
+                key={rowIndex}
+                className="keyboard-row d-flex justify-content-center flex-wrap"
+              >
+                {row.map((letter) => (
+                  <motion.div
+                    key={letter}
+                    className="keyboard-key"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, letter)}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={(e) => handleTouchStart(e, letter)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    style={{
+                      touchAction: "none", // Prevent default touch behaviors
+                      userSelect: "none", // Prevent text selection
+                    }}
+                  >
+                    {letter}
+                  </motion.div>
+                ))}
+              </div>
+            ))}
+          </motion.div>
+
+          <div className="d-flex justify-content-center">
+            <motion.button
+              className="check-button"
+              onClick={checkAnswer}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isCheckDisabled}
+            >
+              Submit
+            </motion.button>
+          </div>
+
+          <AnimatePresence>
+            {message && (
+              <motion.div
+                className="message"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+              >
+                {message}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="character" style={{ position: "relative" }}>
+          {showPraise && (
+            <div
+              className="praise-bubble"
               style={{
-                cursor: missingIndexes.includes(index) ? "pointer" : "default",
+                position: "absolute",
+                bottom: "100%",
+                left: "50%",
+                transform: "translate(-50%, -20px)",
+                background: "#fffbe7",
+                color: "#c77d00",
+                borderRadius: "18px",
+                padding: "8px 18px",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                border: "2px solid #ffd54f",
+                zIndex: 10,
+                whiteSpace: "nowrap",
+                animation: "praise-pop .5s",
               }}
             >
-              {char}
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div
-          className="keyboard-container m-0"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          {KEYBOARD_ROWS.map((row, rowIndex) => (
-            <div key={rowIndex} className="keyboard-row">
-              {row.map((letter) => (
-                <motion.div
-                  key={letter}
-                  className="keyboard-key"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, letter)}
-                  onDragEnd={handleDragEnd}
-                  onTouchStart={(e) => handleTouchStart(e, letter)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={{
-                    touchAction: "none", // Prevent default touch behaviors
-                    userSelect: "none", // Prevent text selection
-                  }}
-                >
-                  {letter}
-                </motion.div>
-              ))}
+              {praiseText}
             </div>
-          ))}
-        </motion.div>
-
-        <div className="d-flex justify-content-center">
-          <motion.button
-            className="check-button m-1"
-            onClick={checkAnswer}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={isCheckDisabled}
-          >
-            Check Answer
-          </motion.button>
+          )}
+          {idleEncouragement && !showPraise && (
+            <div
+              className="praise-bubble"
+              style={{
+                position: "absolute",
+                bottom: "100%",
+                left: "50%",
+                transform: "translate(-50%, -20px)",
+                background: "#e3f2fd",
+                color: "#1976d2",
+                borderRadius: "18px",
+                padding: "8px 18px",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                border: "2px solid #90caf9",
+                zIndex: 10,
+                whiteSpace: "nowrap",
+                animation: "praise-pop .5s",
+              }}
+            >
+              {idleEncouragement}
+            </div>
+          )}
+          <img src={activeCharImg} alt="character" className="character-img" />
         </div>
 
+        {/* Dragged Letter Visual */}
+        {isDragging && draggedLetter && (
+          <div
+            style={{
+              position: "fixed",
+              left: dragPosition.x - 20,
+              top: dragPosition.y - 20,
+              width: "40px",
+              height: "40px",
+              backgroundColor: theme === "dark" ? "#9f265c" : "#c34286",
+              color: theme === "dark" ? "#ffffff" : "#333333",
+              border: `2px solid ${theme === "dark" ? "#9f265c" : "#9f265c"}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "8px",
+              fontSize: "18px",
+              fontWeight: "bold",
+              pointerEvents: "none",
+              zIndex: 9999,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+              transform: "scale(1.1)",
+              transition: "none",
+            }}
+          >
+            {draggedLetter}
+          </div>
+        )}
+
+        {/* Game Over Modal - Debug info */}
+        {console.log("Rendering GameOver modal:", showGameOver)}
         <AnimatePresence>
-          {message && (
-            <motion.div
-              className="message"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-            >
-              {message}
-            </motion.div>
+          {showGameOver && (
+            <GameOver
+              onClose={handleGameOverClose}
+              onRetry={handleRetry}
+              score={score / 10}
+              coins={coins}
+            />
+          )}
+          {showCongratulation && (
+            <Congratulation
+              onClose={handleCloseModal}
+              onPlayAgain={handlePlayAgain}
+              score={score}
+              coins={coins}
+            />
           )}
         </AnimatePresence>
-      </div>
 
-      {/* Dragged Letter Visual */}
-      {isDragging && draggedLetter && (
-        <div
+        <ToastContainer
+          position="bottom-center"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={theme === "dark" ? "dark" : "light"}
+        />
+      </motion.div>
+      <div
+        className="close-btn"
+        onClick={() => setShowCloseModal(true)}
+        title="Close"
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 12,
+          zIndex: 2000,
+          background: "#fff",
+          borderRadius: "50%",
+          width: 40,
+          height: 44.8,
+          boxShadow:
+            "0 4px 16px rgba(255,193,7,0.18), 0 1.5px 4px rgba(0,0,0,0.10)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          border: "3px solid #ffb300",
+          fontSize: "2rem",
+          color: "#ffb300",
+          transition: "background 0.2s, box-shadow 0.2s, transform 0.15s",
+          outline: "none",
+          userSelect: "none",
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = "#fff8e1";
+          e.currentTarget.style.boxShadow =
+            "0 6px 24px rgba(255,193,7,0.28), 0 2px 8px rgba(0,0,0,0.13)";
+          e.currentTarget.style.transform = "scale(1.08)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = "#fff";
+          e.currentTarget.style.boxShadow =
+            "0 4px 16px rgba(255,193,7,0.18), 0 1.5px 4px rgba(0,0,0,0.10)";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        tabIndex={0}
+      >
+        <span
           style={{
-            position: "fixed",
-            left: dragPosition.x - 20,
-            top: dragPosition.y - 20,
-            width: "40px",
-            height: "40px",
-            backgroundColor: theme === "dark" ? "#9f265c" : "#c34286",
-            color: theme === "dark" ? "#ffffff" : "#333333",
-            border: `2px solid ${theme === "dark" ? "#9f265c" : "#9f265c"}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "8px",
-            fontSize: "18px",
+            fontSize: "1.5rem",
             fontWeight: "bold",
+            lineHeight: 1,
+            color: "#ffb300",
             pointerEvents: "none",
-            zIndex: 9999,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-            transform: "scale(1.1)",
-            transition: "none",
+            fontFamily: "Arial, sans-serif",
+            marginTop: "-2px",
           }}
         >
-          {draggedLetter}
-        </div>
-      )}
-
-      {/* Game Over Modal - Debug info */}
-      {console.log("Rendering GameOver modal:", showGameOver)}
-      <AnimatePresence>
-        {showGameOver && (
-          <GameOver
-            onClose={handleGameOverClose}
-            onRetry={handleRetry}
-            score={score / 10}
-            coins={coins}
-          />
-        )}
-        {showCongratulation && (
-          <Congratulation
-            onClose={handleCloseModal}
-            onPlayAgain={handlePlayAgain}
-            score={score}
-            coins={coins}
-          />
-        )}
-      </AnimatePresence>
-
-      <ToastContainer
-        position="bottom-center"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={theme === "dark" ? "dark" : "light"}
+          ×
+        </span>
+      </div>
+      <CloseGameModal
+        show={showCloseModal}
+        onConfirm={() => (window.location.href = "/homepage")}
+        onCancel={() => setShowCloseModal(false)}
       />
-    </motion.div>
+    </>
   );
 };
 

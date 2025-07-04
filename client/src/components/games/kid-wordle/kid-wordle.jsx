@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../context/ThemeContext";
 import { playSoundEffect } from "../../../hooks/useAudio";
@@ -8,12 +8,14 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import "./style.css";
 import { usePlaySoundEffect } from "../../../hooks/playSoundEffect";
+import { useLocation } from "react-router-dom";
 
 // Import sound effects
 import correctSound from "../../../../public/assets/audio/correct.mp3";
 import incorrectSound from "../../../../public/assets/audio/incorrect.mp3";
 import gameOverSound from "../../../../public/assets/audio/game-over.mp3";
 import keyPressSound from "../../../../public/assets/audio/key-press.mp3";
+import CloseGameModal from "../../modal/close/close";
 
 import coin from "../../../../public/assets/misc/coin.png";
 
@@ -51,13 +53,132 @@ const KidWordle = () => {
   const [userLevel, setUserLevel] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const category = params.get("category") || "animals"; // default to animals
+  const containerRef = useRef(null);
+  const [activeCharId, setActiveCharId] = useState(null);
+  const [activeCharImg, setActiveCharImg] = useState(null);
+
+  const praiseMessages = [
+    "Great job!",
+    "Awesome!",
+    "You got it!",
+    "Well done!",
+    "Fantastic!",
+    "Keep it up!",
+    "Super!",
+    "Nice work!",
+  ];
+  const [showPraise, setShowPraise] = useState(false);
+  const [praiseText, setPraiseText] = useState("");
+
+  const encouragementMessages = [
+    "You can do it!",
+    "Take your time!",
+    "Give it a try!",
+    "Trust your instincts!",
+    "Keep going!",
+    "Don't give up!",
+    "You're doing great!",
+    "Stay focused!",
+  ];
+  const [idleEncouragement, setIdleEncouragement] = useState("");
+  const [idleTimer, setIdleTimer] = useState(null);
 
   const playSoundEffect = usePlaySoundEffect();
+
+  const activeCharacter = async () => {
+    try {
+      const token = Cookies.get("token");
+
+      const activeCharacterRes = await axios.get(
+        `${BASE_URL}/api/v1/characters/active`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (
+        activeCharacterRes.data.character &&
+        activeCharacterRes.data.character.charID
+      ) {
+        const id = activeCharacterRes.data.character.charID;
+        setActiveCharId(id);
+      } else {
+        console.log("No active character found or unexpected response format");
+        console.log(
+          "Response data structure:",
+          JSON.stringify(activeCharacterRes.data)
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+  useEffect(() => {
+    activeCharacter();
+  }, []);
+
+  const getActiveCharacter = async () => {
+    try {
+      const charId = activeCharId;
+      const activeChar = await axios.get(
+        `${BASE_URL}/api/v1/characters/${charId}`
+      );
+      console.log("Active character data:", activeChar.data);
+      setActiveCharImg(activeChar.data.character.charImg);
+    } catch (error) {
+      console.error("Error fetching active character:", error);
+    }
+  };
+  useEffect(() => {
+    if (activeCharId !== null) {
+      getActiveCharacter();
+    }
+  }, [activeCharId]);
+
+  useEffect(() => {
+    // Clear any previous timer/interval
+    if (idleTimer) clearInterval(idleTimer);
+
+    // Only show encouragement if not disabled, not loading, not showing praise, and not saving
+    if (!loading && !showPraise && !isSaving && !isSavingProfile) {
+      // Show a message immediately if none is showing
+      if (!idleEncouragement) {
+        const randomEnc =
+          encouragementMessages[
+            Math.floor(Math.random() * encouragementMessages.length)
+          ];
+        setIdleEncouragement(randomEnc);
+      }
+      // Change encouragement every 5 seconds
+      const interval = setInterval(() => {
+        const randomEnc =
+          encouragementMessages[
+            Math.floor(Math.random() * encouragementMessages.length)
+          ];
+        setIdleEncouragement(randomEnc);
+      }, 5000);
+
+      setIdleTimer(interval);
+    }
+
+    // Cleanup
+    return () => {
+      if (idleTimer) clearInterval(idleTimer);
+    };
+    // eslint-disable-next-line
+  }, [loading, showPraise, isSaving, isSavingProfile]);
+
   // Fetch data function
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/api/v1/games/animals`);
+      const response = await axios.get(`${BASE_URL}/api/v1/games/${category}`);
       const data = response.data.questions;
       console.log("Fetched data:", data);
 
@@ -308,6 +429,14 @@ const KidWordle = () => {
       if (currentIndex < questions.length - 1) {
         setMessage("Great job! Moving to next word...");
 
+        // Show praise bubble
+        const randomPraise =
+          praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
+        setPraiseText(randomPraise);
+        setShowPraise(true);
+        setTimeout(() => setShowPraise(false), 3000);
+        setIdleEncouragement("");
+
         // Add a short delay before moving to the next question
         setTimeout(() => {
           setMessage("");
@@ -368,7 +497,7 @@ const KidWordle = () => {
         (status) => status === "bg-success text-white"
       ).length;
       if (correctCount > 0) {
-        playSoundEffect(correctSound);
+        playSoundEffect(incorrectSound);
       } else {
         playSoundEffect(incorrectSound);
       }
@@ -521,150 +650,264 @@ const KidWordle = () => {
   }
 
   return (
-    <motion.div
-      className={`kidwordle-wrapper ${theme}`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <>
       <motion.div
-        className="container hint-card"
-        drag
-        dragConstraints={{ top: 0, left: 0, right: 300, bottom: 300 }}
-        dragElastic={0.2}
+        ref={containerRef}
+        className={`kidwordle-wrapper ${theme}`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        <div className="outline card d-flex flex-column justify-content-center align-items-center">
-          {questions[currentIndex] && questions[currentIndex].imageURL && (
-            <img
-              className="card-img-size"
-              src={questions[currentIndex].imageURL}
-              alt="Word hint"
-            />
-          )}
-          <hr className="divider-line" />
-          <div className="card-body">
-            {hint && <p className="hint-text">{hint}</p>}
-            {message && <p className="message-text">{message}</p>}
+        <motion.div
+          className="container hint-card"
+          drag
+          dragConstraints={containerRef}
+          dragElastic={0.2}
+        >
+          <div className="clue outline card d-flex flex-column justify-content-center align-items-center">
+            {questions[currentIndex] && questions[currentIndex].imageURL && (
+              <img
+                className="card-img-size"
+                src={questions[currentIndex].imageURL}
+                alt="Word hint"
+              />
+            )}
+            <hr className="divider-line" />
+            <div className="card-body">
+              {hint && <p className="hint-text">{hint}</p>}
+              {message && <p className="message-text">{message}</p>}
+            </div>
           </div>
+        </motion.div>
+        <div className="game-container">
+          <motion.h1 className="game-title">
+            {"KidWordle".split("").map((letter, i) => (
+              <motion.span
+                key={i}
+                initial={{ y: -20 }}
+                animate={{ y: 0 }}
+                transition={{
+                  delay: i * 0.1,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 10,
+                }}
+              >
+                {letter}
+              </motion.span>
+            ))}
+            <span>🎯</span>
+          </motion.h1>
+          <div className="d-flex justify-content-between align-items-center mb-0">
+            <p className="h3 text-warning d-flex align-items-center justify-content-center mb-0">
+              <img src={coin} alt="coin" width="30" className="me-2" />
+              {coins}
+            </p>
+            <div className="score-display text-center bg-warning p-2 rounded-pill">
+              Question {Math.min(currentIndex + 1, 10)} of {questions.length}
+            </div>
+          </div>
+          <hr />
+          <motion.div className="word-grid">
+            {[...Array(MAX_GUESSES)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="word-row"
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                {(
+                  guesses[i] ||
+                  (i === guesses.length
+                    ? currentGuess.padEnd(currentWord.length, " ")
+                    : " ".repeat(currentWord.length))
+                )
+                  .split("")
+                  .map((letter, j) => (
+                    <motion.div
+                      key={j}
+                      className={`letter-box ${getLetterClassName(
+                        letter,
+                        j,
+                        guesses[i]
+                      )}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: j * 0.1 }}
+                    >
+                      {letter !== " " ? letter : ""}
+                    </motion.div>
+                  ))}
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <AnimatePresence>
+            {invalidWord && (
+              <motion.p
+                className="invalid-word"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                Oops! That's not a word! Try again! 🤔
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          <motion.div className="keyboard">
+            {KEYBOARD_ROWS.map((row, i) => (
+              <div key={i} className="keyboard-row">
+                {row.map((key) => (
+                  <motion.button
+                    key={key}
+                    className={`keyboard-key ${
+                      key.length > 1 ? "special" : ""
+                    } ${getKeyboardKeyClassName(key)}`}
+                    onClick={() => handleInput(key)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {key === "Backspace" ? "⌫" : key === "Enter" ? "✓" : key}
+                  </motion.button>
+                ))}
+              </div>
+            ))}
+          </motion.div>
         </div>
-      </motion.div>
-      <div className="game-container">
-        <motion.h1 className="game-title">
-          {"KidWordle".split("").map((letter, i) => (
-            <motion.span
-              key={i}
-              initial={{ y: -20 }}
-              animate={{ y: 0 }}
-              transition={{
-                delay: i * 0.1,
-                type: "spring",
-                stiffness: 300,
-                damping: 10,
+        <div className="character" style={{ position: "relative" }}>
+          {showPraise && (
+            <div
+              className="praise-bubble"
+              style={{
+                position: "absolute",
+                bottom: "100%",
+                left: "50%",
+                transform: "translate(-50%, -20px)",
+                background: "#fffbe7",
+                color: "#c77d00",
+                borderRadius: "18px",
+                padding: "8px 18px",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                border: "2px solid #ffd54f",
+                zIndex: 10,
+                whiteSpace: "nowrap",
+                animation: "praise-pop .5s",
               }}
             >
-              {letter}
-            </motion.span>
-          ))}
-          <span>🎯</span>
-        </motion.h1>
-        <div className="d-flex justify-content-between align-items-center mb-0">
-          <p className="h3 text-warning d-flex align-items-center justify-content-center mb-0">
-            <img src={coin} alt="coin" width="30" className="me-2" />
-            {coins}
-          </p>
-          <div className="score-display text-center bg-warning p-2 rounded-pill">
-            Question {Math.min(currentIndex + 1, 10)} of {questions.length}
-          </div>
-        </div>
-        <hr />
-        <motion.div className="word-grid">
-          {[...Array(MAX_GUESSES)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="word-row"
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: i * 0.1 }}
+              {praiseText}
+            </div>
+          )}
+          {idleEncouragement && !showPraise && (
+            <div
+              className="praise-bubble"
+              style={{
+                position: "absolute",
+                bottom: "100%",
+                left: "50%",
+                transform: "translate(-50%, -20px)",
+                background: "#e3f2fd",
+                color: "#1976d2",
+                borderRadius: "18px",
+                padding: "8px 18px",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+                border: "2px solid #90caf9",
+                zIndex: 10,
+                whiteSpace: "nowrap",
+                animation: "praise-pop .5s",
+              }}
             >
-              {(
-                guesses[i] ||
-                (i === guesses.length
-                  ? currentGuess.padEnd(currentWord.length, " ")
-                  : " ".repeat(currentWord.length))
-              )
-                .split("")
-                .map((letter, j) => (
-                  <motion.div
-                    key={j}
-                    className={`letter-box ${getLetterClassName(
-                      letter,
-                      j,
-                      guesses[i]
-                    )}`}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: j * 0.1 }}
-                  >
-                    {letter !== " " ? letter : ""}
-                  </motion.div>
-                ))}
-            </motion.div>
-          ))}
-        </motion.div>
+              {idleEncouragement}
+            </div>
+          )}
+          <img src={activeCharImg} alt="character" className="character-img" />
+        </div>
 
         <AnimatePresence>
-          {invalidWord && (
-            <motion.p
-              className="invalid-word"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-            >
-              Oops! That's not a word! Try again! 🤔
-            </motion.p>
+          {showGameOver && (
+            <GameOver
+              onClose={handleGameOverClose}
+              onRetry={handleRetry}
+              score={score}
+              coins={coins}
+            />
+          )}
+          {showCongratulation && (
+            <Congratulation
+              onClose={handleCloseModal}
+              onPlayAgain={handlePlayAgain}
+              score={score * 10}
+              coins={coins}
+            />
           )}
         </AnimatePresence>
-
-        <motion.div className="keyboard">
-          {KEYBOARD_ROWS.map((row, i) => (
-            <div key={i} className="keyboard-row">
-              {row.map((key) => (
-                <motion.button
-                  key={key}
-                  className={`keyboard-key ${
-                    key.length > 1 ? "special" : ""
-                  } ${getKeyboardKeyClassName(key)}`}
-                  onClick={() => handleInput(key)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {key === "Backspace" ? "⌫" : key === "Enter" ? "✓" : key}
-                </motion.button>
-              ))}
-            </div>
-          ))}
-        </motion.div>
+      </motion.div>
+      <div
+        className="close-btn"
+        onClick={() => setShowCloseModal(true)}
+        title="Close"
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 20,
+          zIndex: 2000,
+          background: "#fff",
+          borderRadius: "50%",
+          width: 56,
+          height: 56,
+          boxShadow:
+            "0 4px 16px rgba(255,193,7,0.18), 0 1.5px 4px rgba(0,0,0,0.10)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          border: "3px solid #ffb300",
+          fontSize: "2rem",
+          color: "#ffb300",
+          transition: "background 0.2s, box-shadow 0.2s, transform 0.15s",
+          outline: "none",
+          userSelect: "none",
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = "#fff8e1";
+          e.currentTarget.style.boxShadow =
+            "0 6px 24px rgba(255,193,7,0.28), 0 2px 8px rgba(0,0,0,0.13)";
+          e.currentTarget.style.transform = "scale(1.08)";
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = "#fff";
+          e.currentTarget.style.boxShadow =
+            "0 4px 16px rgba(255,193,7,0.18), 0 1.5px 4px rgba(0,0,0,0.10)";
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        tabIndex={0}
+      >
+        <span
+          style={{
+            fontSize: "2rem",
+            fontWeight: "bold",
+            lineHeight: 1,
+            color: "#ffb300",
+            pointerEvents: "none",
+            fontFamily: "Arial, sans-serif",
+            marginTop: "-2px",
+          }}
+        >
+          ×
+        </span>
       </div>
 
-      <AnimatePresence>
-        {showGameOver && (
-          <GameOver
-            onClose={handleGameOverClose}
-            onRetry={handleRetry}
-            score={score}
-            coins={coins}
-          />
-        )}
-        {showCongratulation && (
-          <Congratulation
-            onClose={handleCloseModal}
-            onPlayAgain={handlePlayAgain}
-            score={score * 10}
-            coins={coins}
-          />
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <CloseGameModal
+        show={showCloseModal}
+        onConfirm={() => (window.location.href = "/homepage")}
+        onCancel={() => setShowCloseModal(false)}
+      />
+    </>
   );
 };
 

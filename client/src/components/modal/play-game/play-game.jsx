@@ -5,6 +5,8 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import React from "react";
 
+import CategorySelectModal from "../category/category-select.jsx";
+
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 const PlayGame = ({ onClose }) => {
   const navigate = useNavigate();
@@ -12,6 +14,8 @@ const PlayGame = ({ onClose }) => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedGame, setSelectedGame] = useState(null);
 
   // Helper function to get badge text for difficulty level
   const getBadgeInfo = (difficulty) => {
@@ -116,21 +120,21 @@ const PlayGame = ({ onClose }) => {
 
   // Navigate to game and close modal
   const handleGameClick = (game) => {
-    // Make sure we have the correct route format
-    let formattedRoute;
-    if (game.route.startsWith("/")) {
-      formattedRoute = game.route;
-    } else {
-      formattedRoute = `/${game.route}`;
-    }
-
-    // Perform the navigation
-    navigate(formattedRoute);
-
-    // Close the modal after navigation
-    if (onClose) {
-      onClose();
-    }
+    setSelectedGame(game);
+    setShowCategoryModal(true);
+    setShowPlayGame(false);
+    // let formattedRoute;
+    // if (game.route.startsWith("/")) {
+    //   formattedRoute = game.route;
+    // } else {
+    //   formattedRoute = `/${game.route}`;
+    // }
+    // // Perform the navigation
+    // navigate(formattedRoute);
+    // // Close the modal after navigation
+    // if (onClose) {
+    //   onClose();
+    // }
   };
 
   return (
@@ -190,6 +194,21 @@ const PlayGame = ({ onClose }) => {
           </div>
         </div>
       </div>
+      <CategorySelectModal
+        show={showCategoryModal}
+        onSelect={(category) => {
+          setShowCategoryModal(false);
+          // Navigate to the selected game with the category as a query param
+          if (selectedGame) {
+            let formattedRoute = selectedGame.route.startsWith("/")
+              ? selectedGame.route
+              : `/${selectedGame.route}`;
+            navigate(`${formattedRoute}?category=${category}`);
+            if (onClose) onClose();
+          }
+        }}
+        onClose={() => setShowCategoryModal(false)}
+      />
     </>
   );
 };
