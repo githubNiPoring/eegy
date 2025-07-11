@@ -10,11 +10,22 @@ const {
   updateGame,
   deleteGame,
   getGameQuestions,
+  getThingsBasic,
+  getThingsAdvance,
+  getFruitAdvance,
+  getAnimalsBasic,
+  getAnimalsAdvance,
 } = require("../controller/gameController");
 
 router.get("/animals", getAnimals);
 router.get("/things", getThings);
 router.get("/fruit", getFruit);
+
+router.get("/fruit/advance", getFruitAdvance);
+router.get("/things/basic", getThingsBasic);
+router.get("/things/advance", getThingsAdvance);
+router.get("/animals/basic", getAnimalsBasic);
+router.get("/animals/advance", getAnimalsAdvance);
 
 // Get all games (public route)
 router.get("/", getAllGames);

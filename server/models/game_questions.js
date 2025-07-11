@@ -24,6 +24,11 @@ const GameQuestion = sequelize.define(
       allowNull: false,
       defaultValue: "0",
     },
+    option: {
+      type: DataTypes.ENUM("basic", "advanced"),
+      allowNull: false,
+      defaultValue: "basic",
+    },
     category: {
       type: DataTypes.ENUM("animal", "fruit"), // Matches ENUM('animal', 'fruit')
       allowNull: false,

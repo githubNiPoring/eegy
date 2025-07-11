@@ -4,7 +4,7 @@ const categories = [
   { key: "animals", label: "Animals 🐶" },
 ];
 
-const CategorySelectModal = ({ show, onSelect, onClose }) => {
+const CategorySelectModal = ({ show, onSelect, onClose, selectedRadio }) => {
   if (!show) return null;
   return (
     <div
@@ -41,8 +41,16 @@ const CategorySelectModal = ({ show, onSelect, onClose }) => {
               className="btn btn-warning"
               style={{ fontWeight: "bold", fontSize: "1.1rem" }}
               onClick={() => onSelect(cat.key)}
+              disabled={cat.key === "fruit" && selectedRadio !== "advance"}
             >
               {cat.label}
+              {cat.key === "fruit" && selectedRadio !== "advance" && (
+                <span
+                  style={{ marginLeft: 8, color: "#888", fontSize: "0.9em" }}
+                >
+                  (Advance mode only)
+                </span>
+              )}
             </button>
           ))}
         </div>

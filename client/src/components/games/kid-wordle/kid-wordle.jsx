@@ -56,7 +56,8 @@ const KidWordle = () => {
   const [showCloseModal, setShowCloseModal] = useState(false);
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const category = params.get("category") || "animals"; // default to animals
+  const category = params.get("category");
+  const difficulty = params.get("difficulty");
   const containerRef = useRef(null);
   const [activeCharId, setActiveCharId] = useState(null);
   const [activeCharImg, setActiveCharImg] = useState(null);
@@ -178,7 +179,9 @@ const KidWordle = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/api/v1/games/${category}`);
+      const response = await axios.get(
+        `${BASE_URL}/api/v1/games/${category}/${difficulty}`
+      );
       const data = response.data.questions;
       console.log("Fetched data:", data);
 

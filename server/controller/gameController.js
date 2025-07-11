@@ -233,6 +233,141 @@ const getAnimals = async (req, res) => {
   }
 };
 
+const getFruitAdvance = async (req, res) => {
+  try {
+    const fruitCat = await GameQuestion.findAll({
+      where: { category: "fruit", option: "advance" },
+      order: Sequelize.literal("RAND()"),
+      limit: 10,
+    });
+
+    if (!fruitCat || fruitCat.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: fruitCat,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching games",
+      error: error.message,
+    });
+  }
+};
+
+const getThingsBasic = async (req, res) => {
+  try {
+    const thingsCat = await GameQuestion.findAll({
+      where: { category: "thing", option: "basic" },
+      order: Sequelize.literal("RAND()"),
+      limit: 10,
+    });
+
+    if (!thingsCat || thingsCat.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: thingsCat,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching games",
+      error: error.message,
+    });
+  }
+};
+
+const getThingsAdvance = async (req, res) => {
+  try {
+    const thingsCat = await GameQuestion.findAll({
+      where: { category: "thing", option: "advance" },
+      order: Sequelize.literal("RAND()"),
+      limit: 10,
+    });
+
+    if (!thingsCat || thingsCat.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: thingsCat,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching games",
+      error: error.message,
+    });
+  }
+};
+
+const getAnimalsBasic = async (req, res) => {
+  try {
+    const animalsCat = await GameQuestion.findAll({
+      where: { category: "animal", option: "basic" },
+      order: Sequelize.literal("RAND()"),
+      limit: 10,
+    });
+
+    if (!animalsCat || animalsCat.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: animalsCat,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching games",
+      error: error.message,
+    });
+  }
+};
+
+const getAnimalsAdvance = async (req, res) => {
+  try {
+    const animalsCat = await GameQuestion.findAll({
+      where: { category: "animal", option: "advance" },
+      order: Sequelize.literal("RAND()"),
+      limit: 10,
+    });
+
+    if (!animalsCat || animalsCat.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No questions found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      questions: animalsCat,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching games",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAnimals,
   getThings,
@@ -243,4 +378,9 @@ module.exports = {
   updateGame,
   deleteGame,
   getGameQuestions,
+  getFruitAdvance,
+  getThingsBasic,
+  getThingsAdvance,
+  getAnimalsBasic,
+  getAnimalsAdvance,
 };

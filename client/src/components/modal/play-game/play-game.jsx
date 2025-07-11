@@ -16,6 +16,7 @@ const PlayGame = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedRadio, setSelectedRadio] = useState("basic");
 
   // Helper function to get badge text for difficulty level
   const getBadgeInfo = (difficulty) => {
@@ -148,6 +149,25 @@ const PlayGame = ({ onClose }) => {
             </button>
 
             <div className="game-selection-container">
+              <div className="customCheckBoxHolder">
+                <input
+                  type="checkbox"
+                  name="difficulty"
+                  id="cCB1"
+                  checked={selectedRadio === "advance"}
+                  onChange={() =>
+                    setSelectedRadio(
+                      selectedRadio === "advance" ? "basic" : "advance"
+                    )
+                  }
+                  className="customCheckBoxInput"
+                />
+                <label htmlFor="cCB1" className="customCheckBoxWrapper">
+                  <div className="customCheckBox">
+                    <div className="inner">Advance</div>
+                  </div>
+                </label>
+              </div>
               <div className="text-center mb-3">
                 <h2 className="game-selection-title">
                   Choose Your Adventure! 🎮
@@ -196,6 +216,7 @@ const PlayGame = ({ onClose }) => {
       </div>
       <CategorySelectModal
         show={showCategoryModal}
+        selectedRadio={selectedRadio}
         onSelect={(category) => {
           setShowCategoryModal(false);
           // Navigate to the selected game with the category as a query param
@@ -203,7 +224,9 @@ const PlayGame = ({ onClose }) => {
             let formattedRoute = selectedGame.route.startsWith("/")
               ? selectedGame.route
               : `/${selectedGame.route}`;
-            navigate(`${formattedRoute}?category=${category}`);
+            navigate(
+              `${formattedRoute}?category=${category}&difficulty=${selectedRadio}`
+            );
             if (onClose) onClose();
           }
         }}

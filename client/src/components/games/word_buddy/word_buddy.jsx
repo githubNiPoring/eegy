@@ -47,7 +47,8 @@ const Wordbuddy = () => {
 
   const location = useLocation();
   const params = new URLSearchParams(location.search);
-  const category = params.get("category") || "fruit"; // default to fruit
+  const category = params.get("category");
+  const difficulty = params.get("difficulty");
 
   const praiseMessages = [
     "Great job!",
@@ -297,7 +298,9 @@ const Wordbuddy = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/api/v1/games/${category}`);
+      const response = await axios.get(
+        `${BASE_URL}/api/v1/games/${category}/${difficulty}`
+      );
       const data = response.data.questions;
 
       // Keep the original structure instead of reformatting

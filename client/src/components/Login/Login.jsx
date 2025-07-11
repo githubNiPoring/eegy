@@ -97,10 +97,7 @@ const Login = () => {
                       style={{ fontSize: "1.5rem" }}
                     ></i>
                   </div>
-                  <h1
-                    className="mt-3 mb-0"
-                    style={{ fontFamily: "'Comic Sans MS', cursive" }}
-                  >
+                  <h1 className="mt-3 mb-0" style={{ fontSize: "2rem" }}>
                     Welcome to EEG<span className="text-warning">y</span>!
                   </h1>
                   <p className="text-secondary" style={{ fontSize: "1.1rem" }}>
